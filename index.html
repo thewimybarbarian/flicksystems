@@ -1,27 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FLICK.SYSTEMS — AI Agency of the Future</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
   <style>
-    :root {
-      --c1:#00f5ff; --c1d:rgba(0,245,255,0.4); --c1x:rgba(0,245,255,0.07);
-      --c2:#7000ff; --c2d:rgba(112,0,255,0.5); --c2x:rgba(112,0,255,0.06);
-      --white:#e8f0f8; --dim:#2a3a4a; --dim2:#4a6070;
-      --bg:#020408; --bg2:#050810;
-      --glass:rgba(255,255,255,0.02); --border:rgba(0,245,255,0.08);
+    :root{
+      --c1:#00f5ff;--c1d:rgba(0,245,255,0.4);--c1x:rgba(0,245,255,0.07);
+      --c2:#7000ff;--c2d:rgba(112,0,255,0.5);
+      --white:#e8f0f8;--dim:#2a3a4a;--dim2:#4a6070;
+      --bg:#020408;--bg2:#050810;
+      --glass:rgba(255,255,255,0.02);--border:rgba(0,245,255,0.08);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html{scroll-behavior:smooth;}
+    html{scroll-behavior:auto;}
     body{background:var(--bg);color:var(--white);font-family:'Rajdhani',sans-serif;overflow-x:hidden;cursor:none;}
 
+    /* CURSOR */
     #cur{position:fixed;width:7px;height:7px;background:var(--c1);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 14px var(--c1),0 0 28px var(--c1d);transition:transform 0.06s;}
     #cur-ring{position:fixed;width:26px;height:26px;border:1px solid var(--c1);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);opacity:0.4;transition:width 0.18s,height 0.18s,opacity 0.18s,border-color 0.18s;}
 
+    /* OVERLAYS */
     .scanlines{position:fixed;inset:0;z-index:1000;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);}
     .vhs{position:fixed;inset:0;z-index:998;pointer-events:none;animation:vhsF 0.13s steps(1) infinite;}
     @keyframes vhsF{0%{opacity:.04}20%{opacity:.01}40%{opacity:.06}60%{opacity:.02}80%{opacity:.05}100%{opacity:.03}}
@@ -31,58 +35,150 @@
     #particles{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
     #gl{position:fixed;inset:0;z-index:850;pointer-events:none;}
 
-    @keyframes glitchTitle{
-      0%,86%,100%{text-shadow:0 0 60px rgba(0,245,255,0.8),0 0 120px rgba(0,245,255,0.3);transform:translate(0) skewX(0);clip-path:none;}
-      87%{text-shadow:-8px 0 0 var(--c2),8px 0 0 var(--c1);transform:translate(5px,1px) skewX(-2.5deg);clip-path:polygon(0 20%,100% 20%,100% 45%,0 45%);}
-      87.6%{text-shadow:8px 0 0 var(--c2),-8px 0 0 var(--c1);transform:translate(-5px,-1px) skewX(2deg);clip-path:polygon(0 58%,100% 58%,100% 80%,0 80%);}
-      88%{text-shadow:0 0 60px rgba(0,245,255,0.8);transform:translate(0) skewX(0);clip-path:none;}
-      93%{text-shadow:5px 0 0 rgba(112,0,255,0.9),-5px 0 0 var(--c1);transform:translate(-3px,0);clip-path:polygon(0 5%,100% 5%,100% 18%,0 18%);}
-      93.4%{text-shadow:0 0 60px rgba(0,245,255,0.8);transform:translate(0);clip-path:none;}
+    /* GLITCH */
+    @keyframes glitchT{
+      0%,86%,100%{text-shadow:0 0 60px rgba(0,245,255,0.8),0 0 120px rgba(0,245,255,0.3);clip-path:none;transform:translate(0) skewX(0);}
+      87%{text-shadow:-8px 0 0 var(--c2),8px 0 0 var(--c1);clip-path:polygon(0 20%,100% 20%,100% 45%,0 45%);transform:translate(5px,1px) skewX(-2.5deg);}
+      87.6%{text-shadow:8px 0 0 var(--c2),-8px 0 0 var(--c1);clip-path:polygon(0 58%,100% 58%,100% 80%,0 80%);transform:translate(-5px,-1px) skewX(2deg);}
+      88%{text-shadow:0 0 60px rgba(0,245,255,0.8);clip-path:none;transform:translate(0) skewX(0);}
     }
-    @keyframes subtitleFlicker{0%,89%,100%{opacity:1}90%{opacity:0.1}90.5%{opacity:1}91%{opacity:0.3}91.4%{opacity:1}}
-    @keyframes sectionGlitch{0%,92%,100%{clip-path:none;transform:none;}93%{clip-path:polygon(0 35%,100% 35%,100% 55%,0 55%);transform:translateX(5px);}93.5%{clip-path:polygon(0 10%,100% 10%,100% 28%,0 28%);transform:translateX(-5px);}94%{clip-path:none;transform:none;}}
     @keyframes logoBlink{0%,100%{opacity:1}91%{opacity:1}92%{opacity:0.15}92.4%{opacity:1}}
-    @keyframes borderPulse{0%,100%{border-color:var(--border)}50%{border-color:rgba(0,245,255,0.18)}}
-    @keyframes cardFlicker{0%,94%,100%{opacity:1}95%{opacity:0.2}95.4%{opacity:1}96%{opacity:0.5}96.3%{opacity:1}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes scanL{0%{top:-3px;opacity:0}5%{opacity:1}95%{opacity:0.7}100%{top:100vh;opacity:0}}
-    @keyframes heroPulse{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.8;transform:translate(-50%,-50%) scale(1.08)}}
     @keyframes floatUp{0%{transform:translateY(105vh);opacity:0}8%{opacity:0.6}92%{opacity:0.4}100%{transform:translateY(-10vh);opacity:0}}
-    @keyframes pricingGlow{0%,100%{box-shadow:0 0 30px rgba(0,245,255,0.08)}50%{box-shadow:0 0 60px rgba(0,245,255,0.18),0 0 100px rgba(112,0,255,0.08)}}
+    @keyframes scanL{0%{top:-3px;opacity:0}5%{opacity:1}95%{opacity:0.7}100%{top:100%;opacity:0}}
+    @keyframes pricingGlow{0%,100%{box-shadow:0 0 30px rgba(0,245,255,0.08)}50%{box-shadow:0 0 60px rgba(0,245,255,0.2),0 0 100px rgba(112,0,255,0.08)}}
 
-    .reveal{opacity:0;transform:translateY(28px);transition:opacity 0.85s ease,transform 0.85s ease;}
-    .reveal.on{opacity:1;transform:translateY(0);}
-    .reveal-l{opacity:0;transform:translateX(-28px);transition:opacity 0.85s ease,transform 0.85s ease;}
-    .reveal-l.on{opacity:1;transform:translateX(0);}
-
-    nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;background:rgba(2,4,8,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;background:rgba(2,4,8,0.0);backdrop-filter:blur(0px);border-bottom:1px solid rgba(0,245,255,0);transition:background 0.4s,backdrop-filter 0.4s,border-color 0.4s;}
+    nav.scrolled{background:rgba(2,4,8,0.95);backdrop-filter:blur(20px);border-bottom-color:var(--border);}
     .nav-logo{font-family:'Orbitron',monospace;font-weight:900;font-size:1rem;letter-spacing:0.16em;color:var(--c1);text-shadow:0 0 20px var(--c1d);animation:logoBlink 8s ease-in-out infinite;}
     .nav-logo span{color:var(--dim2);}
     .nav-links{display:flex;gap:2.5rem;list-style:none;}
     .nav-links a{font-family:'Share Tech Mono',monospace;font-size:0.68rem;letter-spacing:0.22em;color:var(--dim2);text-decoration:none;text-transform:uppercase;transition:color 0.2s,text-shadow 0.2s;}
     .nav-links a:hover{color:var(--c1);text-shadow:0 0 10px var(--c1);}
+    .nav-right{display:flex;align-items:center;gap:0.8rem;}
     .nav-cta{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.2em;color:var(--c1);background:none;border:1px solid var(--c1);padding:0.45rem 1.2rem;cursor:none;transition:all 0.25s;text-decoration:none;text-transform:uppercase;}
     .nav-cta:hover{background:var(--c1);color:var(--bg);box-shadow:0 0 20px var(--c1d);}
-    .sound-btn{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--dim2);background:none;border:1px solid var(--border);padding:0.4rem 0.9rem;cursor:none;transition:all 0.25s;margin-left:0.8rem;}
+    .sound-btn{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--dim2);background:none;border:1px solid var(--border);padding:0.4rem 0.9rem;cursor:none;transition:all 0.25s;}
     .sound-btn:hover,.sound-btn.on{color:var(--c1);border-color:var(--c1);box-shadow:0 0 12px var(--c1d);}
 
-    #hero{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:9rem 2rem 5rem;overflow:hidden;}
-    .hero-aura{position:absolute;width:1000px;height:1000px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(0,245,255,0.06) 0%,rgba(112,0,255,0.04) 35%,transparent 70%);top:50%;left:50%;animation:heroPulse 8s ease-in-out infinite;}
-    .scan-sweep{position:absolute;left:0;right:0;height:1px;pointer-events:none;z-index:5;background:linear-gradient(90deg,transparent 0%,var(--c2) 20%,var(--c1) 60%,transparent 100%);box-shadow:0 0 20px var(--c1),0 0 50px var(--c2d);animation:scanL 9s ease-in-out infinite 1s;}
-    .hero-eyebrow{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.55em;color:var(--c1);text-transform:uppercase;margin-bottom:2rem;opacity:0;animation:fadeUp 0.8s ease 0.2s forwards;}
-    .hero-title-wrap{opacity:0;animation:fadeUp 0.8s ease 0.4s forwards;}
-    .hero-title{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(4rem,12vw,11rem);line-height:0.88;letter-spacing:-0.02em;color:var(--c1);animation:glitchTitle 6s ease-in-out 1.5s infinite;}
-    .hero-sys{display:block;font-size:0.38em;letter-spacing:0.4em;color:var(--dim2);margin-top:0.3em;font-weight:400;animation:subtitleFlicker 11s ease-in-out infinite;}
-    .hero-sub{font-size:clamp(0.85rem,1.8vw,1.1rem);font-weight:300;color:var(--dim2);letter-spacing:0.18em;text-transform:uppercase;max-width:560px;margin:2.5rem auto 3.5rem;opacity:0;animation:fadeUp 0.8s ease 0.7s forwards;}
-    .hero-ctas{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp 0.8s ease 0.9s forwards;}
+    /* SCROLL PROGRESS BAR */
+    #progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--c2),var(--c1));z-index:600;width:0%;transition:width 0.1s;box-shadow:0 0 10px var(--c1);}
 
-    #stats{position:relative;z-index:2;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
-    .stats-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:3rem 2rem;}
-    .stat{text-align:center;padding:1.5rem 1rem;border-right:1px solid var(--border);}
-    .stat:last-child{border-right:none;}
-    .stat-num{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(2rem,4vw,3rem);color:var(--c1);text-shadow:0 0 30px var(--c1d);letter-spacing:0.02em;}
-    .stat-label{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.3em;color:var(--dim2);text-transform:uppercase;margin-top:0.5rem;}
+    /* CHAPTER INDICATOR */
+    #chapters{position:fixed;right:2rem;top:50%;transform:translateY(-50%);z-index:501;display:flex;flex-direction:column;gap:0.8rem;}
+    .ch-dot{width:6px;height:6px;border-radius:50%;background:var(--dim);cursor:none;transition:all 0.3s;border:1px solid var(--border);}
+    .ch-dot.active{background:var(--c1);box-shadow:0 0 10px var(--c1);transform:scale(1.5);}
+    .ch-dot:hover{background:var(--c1d);}
 
+    /* PANELS — full screen story sections */
+    .panel{
+      position:relative;min-height:100vh;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:6rem 4rem;overflow:hidden;z-index:2;
+    }
+
+    /* Panel backgrounds */
+    .panel-hero{background:var(--bg);}
+    .panel-problem{background:var(--bg2);}
+    .panel-solution{background:var(--bg);}
+    .panel-services{background:var(--bg2);}
+    .panel-work{background:var(--bg);}
+    .panel-pricing{background:var(--bg2);}
+    .panel-cta{background:var(--bg);}
+
+    /* Scan sweep per panel */
+    .sweep{position:absolute;left:0;right:0;height:1px;pointer-events:none;z-index:5;background:linear-gradient(90deg,transparent,var(--c2),var(--c1),transparent);box-shadow:0 0 20px var(--c1),0 0 50px var(--c2d);animation:scanL 10s ease-in-out infinite;}
+
+    /* Panel aura */
+    .aura{position:absolute;width:800px;height:800px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(0,245,255,0.05) 0%,rgba(112,0,255,0.03) 40%,transparent 70%);animation:auraP 8s ease-in-out infinite;}
+    @keyframes auraP{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:0.8;transform:scale(1.06)}}
+
+    /* Typography */
+    .eyebrow{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.55em;color:var(--c1);text-transform:uppercase;margin-bottom:1.5rem;opacity:0;}
+    .big-title{font-family:'Orbitron',monospace;font-weight:900;line-height:0.9;letter-spacing:-0.02em;margin-bottom:0;opacity:0;}
+    .big-title em{color:var(--c1);font-style:normal;animation:glitchT 6s ease-in-out infinite;}
+    .big-title .dim{color:var(--dim2);}
+    .body-text{font-size:clamp(1rem,2vw,1.25rem);font-weight:300;color:var(--dim2);line-height:1.8;max-width:640px;opacity:0;margin-top:2rem;}
+    .section-label{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.55em;color:var(--c1);text-transform:uppercase;margin-bottom:0.8rem;opacity:0;}
+
+    /* HERO specific */
+    .hero-title{font-size:clamp(5rem,14vw,13rem);}
+    .hero-sys{display:block;font-size:0.3em;letter-spacing:0.45em;color:var(--dim2);margin-top:0.4em;font-weight:400;}
+    .hero-sub{text-align:center;letter-spacing:0.12em;text-transform:uppercase;}
+    .hero-ctas{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;margin-top:3rem;opacity:0;}
+
+    /* PROBLEM panel */
+    .panel-problem .inner{max-width:900px;text-align:center;}
+    .problem-title{font-size:clamp(2.5rem,6vw,6rem);}
+    .stat-row{display:flex;gap:4rem;justify-content:center;margin-top:4rem;opacity:0;}
+    .stat-item{text-align:center;}
+    .stat-n{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(2.5rem,5vw,4.5rem);color:var(--c1);text-shadow:0 0 30px var(--c1d);}
+    .stat-l{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.3em;color:var(--dim2);text-transform:uppercase;margin-top:0.4rem;}
+
+    /* SOLUTION panel */
+    .panel-solution .inner{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;max-width:1100px;width:100%;}
+    .solution-title{font-size:clamp(2.5rem,5vw,5rem);}
+    .solution-visual{position:relative;height:400px;}
+    .sv-box{position:absolute;border:1px solid;}
+    .sv-box1{top:0;left:0;right:80px;bottom:80px;border-color:var(--border);background:var(--glass);}
+    .sv-box2{top:50px;left:50px;right:0;bottom:0;border-color:rgba(0,245,255,0.12);background:var(--c1x);}
+    .sv-label{font-family:'Orbitron',monospace;font-weight:900;font-size:4rem;color:var(--c1);text-shadow:0 0 40px var(--c1d);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;animation:glitchT 7s ease-in-out 2s infinite;}
+
+    /* SERVICES panel */
+    .panel-services .inner{max-width:1200px;width:100%;}
+    .services-title{font-size:clamp(2rem,4vw,4rem);margin-bottom:0;text-align:center;}
+    .svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:3rem;opacity:0;}
+    .svc{background:var(--glass);border:1px solid var(--border);padding:2rem;position:relative;overflow:hidden;transition:all 0.3s;cursor:none;}
+    .svc::before{content:'';position:absolute;top:0;left:0;width:0;height:2px;background:linear-gradient(90deg,var(--c1),var(--c2));transition:width 0.5s;}
+    .svc:hover::before{width:100%;}
+    .svc:hover{border-color:rgba(0,245,255,0.25);box-shadow:0 0 40px rgba(0,245,255,0.05);transform:translateY(-4px);}
+    .svc-icon{font-family:'Orbitron',monospace;font-size:0.6rem;letter-spacing:0.4em;color:var(--c1);margin-bottom:1rem;opacity:0.7;}
+    .svc-title{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.08em;margin-bottom:0.7rem;}
+    .svc-desc{font-size:0.88rem;line-height:1.75;color:var(--dim2);font-weight:300;}
+
+    /* WORK panel */
+    .panel-work .inner{max-width:1100px;width:100%;}
+    .work-title{font-size:clamp(2rem,4vw,4rem);text-align:center;}
+    .work-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:3rem;opacity:0;}
+    .wcard{background:var(--glass);border:1px solid var(--border);padding:2.2rem;position:relative;overflow:hidden;transition:all 0.35s;}
+    .wcard::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,255,0.03),transparent 60%);opacity:0;transition:opacity 0.3s;}
+    .wcard:hover::after{opacity:1;}
+    .wcard:hover{border-color:rgba(0,245,255,0.3);box-shadow:0 0 50px rgba(0,245,255,0.06);transform:translateY(-3px);}
+    .wtag{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.4em;color:var(--c1);text-transform:uppercase;margin-bottom:0.8rem;opacity:0.7;}
+    .wtitle{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;letter-spacing:0.06em;margin-bottom:0.7rem;}
+    .wdesc{font-size:0.88rem;line-height:1.75;color:var(--dim2);font-weight:300;}
+    .wresult{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.2em;color:var(--c1);margin-top:1rem;opacity:0.8;}
+
+    /* PRICING panel */
+    .panel-pricing .inner{max-width:1100px;width:100%;}
+    .pricing-title{font-size:clamp(2rem,4vw,4rem);text-align:center;}
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;opacity:0;}
+    .pcard{background:var(--glass);border:1px solid var(--border);padding:2.5rem;position:relative;overflow:hidden;transition:all 0.35s;display:flex;flex-direction:column;}
+    .pcard.featured{border-color:var(--c1);animation:pricingGlow 4s ease-in-out infinite;}
+    .pcard.featured::before{content:'// MOST POPULAR';position:absolute;top:0;left:0;right:0;background:var(--c1);color:var(--bg);font-family:'Share Tech Mono',monospace;font-size:0.52rem;letter-spacing:0.4em;text-align:center;padding:0.4rem;text-transform:uppercase;}
+    .pcard:hover{transform:translateY(-5px);border-color:rgba(0,245,255,0.4);box-shadow:0 0 50px rgba(0,245,255,0.08);}
+    .ptag{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.4em;color:var(--c1);text-transform:uppercase;margin-bottom:1rem;margin-top:0.3rem;}
+    .pcard.featured .ptag{margin-top:1.8rem;}
+    .pname{font-family:'Orbitron',monospace;font-weight:900;font-size:1.1rem;letter-spacing:0.06em;margin-bottom:0.5rem;}
+    .pamount{font-family:'Orbitron',monospace;font-weight:900;font-size:2.8rem;color:var(--c1);text-shadow:0 0 30px var(--c1d);line-height:1;margin-bottom:0.2rem;}
+    .pperiod{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;color:var(--dim2);margin-bottom:1.2rem;}
+    .pdesc{font-size:0.88rem;line-height:1.75;color:var(--dim2);font-weight:300;margin-bottom:1.5rem;flex:1;}
+    .pfeatures{list-style:none;margin-bottom:1.8rem;display:flex;flex-direction:column;gap:0.5rem;}
+    .pfeatures li{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;color:var(--dim2);}
+    .pfeatures li::before{content:'→ ';color:var(--c1);}
+    .btn-p{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;padding:0.9rem;border:1px solid var(--c1);cursor:none;position:relative;overflow:hidden;transition:all 0.3s;display:block;text-align:center;color:var(--c1);}
+    .btn-p::before{content:'';position:absolute;inset:0;background:var(--c1);transform:translateX(-101%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
+    .btn-p:hover::before{transform:translateX(0);}
+    .btn-p span{position:relative;z-index:1;}
+    .btn-p:hover{color:var(--bg);box-shadow:0 0 40px var(--c1d);}
+    .pcard.featured .btn-p{background:var(--c1);color:var(--bg);}
+
+    /* CTA panel */
+    .panel-cta .inner{text-align:center;max-width:760px;}
+    .cta-title{font-size:clamp(3rem,8vw,8rem);}
+    .cta-btns{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;margin-top:3rem;opacity:0;}
+
+    /* BUTTONS */
     .btn{font-family:'Share Tech Mono',monospace;font-size:0.68rem;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;padding:1rem 2.5rem;border:1px solid;cursor:none;position:relative;overflow:hidden;transition:all 0.3s;display:inline-block;}
     .btn::before{content:'';position:absolute;inset:0;transform:translateX(-101%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
     .btn:hover::before{transform:translateX(0);}
@@ -94,73 +190,7 @@
     .btn-ghost::before{background:rgba(255,255,255,0.05);}
     .btn-ghost:hover{color:var(--white);}
 
-    section{position:relative;z-index:2;padding:6rem 2rem;}
-    .container{max-width:1200px;margin:0 auto;}
-    .divider{position:relative;z-index:2;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);}
-    .section-label{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.55em;color:var(--c1);text-transform:uppercase;margin-bottom:0.8rem;}
-    .section-title{font-family:'Orbitron',monospace;font-weight:700;font-size:clamp(1.6rem,3.5vw,2.8rem);letter-spacing:0.02em;margin-bottom:1.2rem;animation:sectionGlitch 14s ease-in-out infinite;}
-    .section-title em{color:var(--c1);font-style:normal;}
-
-    #services{background:var(--bg2);}
-    .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:3rem;}
-    .svc{background:var(--glass);border:1px solid var(--border);padding:2.2rem;position:relative;overflow:hidden;transition:all 0.3s;cursor:none;animation:borderPulse 6s ease-in-out infinite;}
-    .svc::before{content:'';position:absolute;top:0;left:0;width:0;height:2px;background:linear-gradient(90deg,var(--c1),var(--c2));transition:width 0.5s;}
-    .svc:hover::before{width:100%;}
-    .svc:hover{border-color:rgba(0,245,255,0.25);box-shadow:0 0 40px rgba(0,245,255,0.05),inset 0 0 30px rgba(0,245,255,0.02);transform:translateY(-4px);}
-    .svc-icon{font-family:'Orbitron',monospace;font-weight:900;font-size:0.65rem;letter-spacing:0.4em;color:var(--c1);margin-bottom:1.2rem;opacity:0.7;}
-    .svc-title{font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:700;letter-spacing:0.08em;margin-bottom:0.9rem;}
-    .svc-desc{font-size:0.9rem;line-height:1.8;color:var(--dim2);font-weight:300;}
-
-    /* ── PRICING ── */
-    #pricing{background:var(--bg);}
-    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
-    .price-card{background:var(--glass);border:1px solid var(--border);padding:2.5rem;position:relative;overflow:hidden;transition:all 0.35s;display:flex;flex-direction:column;}
-    .price-card.featured{border-color:var(--c1);animation:pricingGlow 4s ease-in-out infinite;}
-    .price-card.featured::before{content:'// MOST POPULAR';position:absolute;top:0;left:0;right:0;background:var(--c1);color:var(--bg);font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:0.4em;text-align:center;padding:0.4rem;text-transform:uppercase;}
-    .price-card:hover{transform:translateY(-5px);border-color:rgba(0,245,255,0.4);box-shadow:0 0 50px rgba(0,245,255,0.08);}
-    .price-tag{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.4em;color:var(--c1);text-transform:uppercase;margin-bottom:1.2rem;margin-top:0.5rem;}
-    .price-card.featured .price-tag{margin-top:1.8rem;}
-    .price-name{font-family:'Orbitron',monospace;font-weight:900;font-size:1.2rem;letter-spacing:0.06em;margin-bottom:0.5rem;}
-    .price-amount{font-family:'Orbitron',monospace;font-weight:900;font-size:2.8rem;color:var(--c1);text-shadow:0 0 30px var(--c1d);line-height:1;margin-bottom:0.3rem;}
-    .price-period{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.2em;color:var(--dim2);margin-bottom:1.5rem;}
-    .price-desc{font-size:0.9rem;line-height:1.75;color:var(--dim2);font-weight:300;margin-bottom:1.8rem;flex:1;}
-    .price-features{list-style:none;margin-bottom:2rem;display:flex;flex-direction:column;gap:0.6rem;}
-    .price-features li{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;color:var(--dim2);}
-    .price-features li::before{content:'→ ';color:var(--c1);}
-    .btn-price{font-family:'Share Tech Mono',monospace;font-size:0.68rem;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;padding:1rem;border:1px solid var(--c1);cursor:none;position:relative;overflow:hidden;transition:all 0.3s;display:block;text-align:center;color:var(--c1);}
-    .btn-price::before{content:'';position:absolute;inset:0;background:var(--c1);transform:translateX(-101%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
-    .btn-price:hover::before{transform:translateX(0);}
-    .btn-price span{position:relative;z-index:1;}
-    .btn-price:hover{color:var(--bg);box-shadow:0 0 40px var(--c1d);}
-    .price-card.featured .btn-price{background:var(--c1);color:var(--bg);}
-    .price-card.featured .btn-price::before{background:rgba(0,245,255,0.2);}
-    .price-card.featured .btn-price:hover{color:var(--bg);box-shadow:0 0 50px var(--c1d);}
-
-    #work{background:var(--bg2);}
-    .work-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:3rem;}
-    .work-card{background:var(--glass);border:1px solid var(--border);padding:2.5rem;position:relative;overflow:hidden;transition:all 0.35s;animation:cardFlicker 13s ease-in-out infinite;}
-    .work-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,255,0.03) 0%,transparent 60%);opacity:0;transition:opacity 0.3s;}
-    .work-card:hover::after{opacity:1;}
-    .work-card:hover{border-color:rgba(0,245,255,0.3);box-shadow:0 0 50px rgba(0,245,255,0.06);transform:translateY(-3px);}
-    .work-tag{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.4em;color:var(--c1);text-transform:uppercase;margin-bottom:1rem;opacity:0.7;}
-    .work-title{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:700;letter-spacing:0.06em;margin-bottom:0.8rem;}
-    .work-desc{font-size:0.92rem;line-height:1.75;color:var(--dim2);font-weight:300;}
-    .work-result{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:var(--c1);margin-top:1.2rem;opacity:0.8;}
-
-    #about{background:var(--bg2);}
-    .about-inner{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;margin-top:3rem;}
-    .about-text p{font-size:1rem;line-height:1.85;color:var(--dim2);font-weight:300;margin-bottom:1.2rem;}
-    .about-visual{position:relative;height:350px;}
-    .av-box{position:absolute;border:1px solid;}
-    .av-box1{top:0;left:0;right:60px;bottom:60px;border-color:var(--border);background:var(--glass);}
-    .av-box2{top:40px;left:40px;right:0;bottom:0;border-color:rgba(0,245,255,0.12);background:var(--c1x);}
-    .av-label{font-family:'Orbitron',monospace;font-weight:900;font-size:3.5rem;color:var(--c1);text-shadow:0 0 40px var(--c1d);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;animation:glitchTitle 7s ease-in-out 2s infinite;}
-
-    #cta{background:var(--bg);text-align:center;}
-    .cta-wrap{max-width:680px;margin:3rem auto 0;}
-    .cta-body{font-size:1.05rem;line-height:1.8;color:var(--dim2);margin-bottom:3rem;font-weight:300;}
-    .cta-btns{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;}
-
+    /* FOOTER */
     footer{position:relative;z-index:2;padding:1.8rem 3rem;border-top:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;}
     .foot-logo{font-family:'Orbitron',monospace;font-size:0.8rem;font-weight:700;letter-spacing:0.16em;color:var(--c1);}
     .foot-logo span{color:var(--dim2);}
@@ -169,9 +199,9 @@
 
     @media(max-width:768px){
       nav{padding:1rem 1.5rem;} .nav-links{display:none;}
-      .stats-grid{grid-template-columns:repeat(2,1fr);}
-      .stat{border-right:none;border-bottom:1px solid var(--border);}
-      .services-grid,.work-grid,.about-inner,.pricing-grid{grid-template-columns:1fr;}
+      .panel{padding:5rem 1.5rem;}
+      .panel-solution .inner,.work-grid,.pricing-grid,.svc-grid{grid-template-columns:1fr;}
+      #chapters{display:none;}
       footer{flex-direction:column;gap:1rem;text-align:center;}
     }
   </style>
@@ -185,171 +215,165 @@
 <div id="gl"></div>
 <div id="cur"></div>
 <div id="cur-ring"></div>
+<div id="progress"></div>
 
-<nav>
+<!-- Chapter dots -->
+<div id="chapters">
+  <div class="ch-dot active" data-target="hero" title="Home"></div>
+  <div class="ch-dot" data-target="problem" title="Problem"></div>
+  <div class="ch-dot" data-target="solution" title="Solution"></div>
+  <div class="ch-dot" data-target="services" title="Services"></div>
+  <div class="ch-dot" data-target="work" title="Work"></div>
+  <div class="ch-dot" data-target="pricing" title="Pricing"></div>
+  <div class="ch-dot" data-target="cta" title="Contact"></div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
   <div class="nav-logo">FLICK<span>.SYSTEMS</span></div>
   <ul class="nav-links">
     <li><a href="#services">Services</a></li>
     <li><a href="#pricing">Pricing</a></li>
     <li><a href="#work">Work</a></li>
-    <li><a href="#about">About</a></li>
+    <li><a href="#cta">Contact</a></li>
   </ul>
-  <div style="display:flex;align-items:center;gap:0.5rem;">
+  <div class="nav-right">
     <a href="#pricing" class="nav-cta">Start Project</a>
     <button class="sound-btn" id="soundBtn" onclick="toggleSound()">[ SFX ]</button>
   </div>
 </nav>
 
-<section id="hero">
-  <div class="hero-aura"></div>
-  <div class="scan-sweep"></div>
-  <p class="hero-eyebrow">// AI Agency · Production · Strategy</p>
-  <div class="hero-title-wrap">
-    <h1 class="hero-title">FLICK<span class="hero-sys">.SYSTEMS</span></h1>
+<!-- ═══ PANEL 1 — HERO ═══ -->
+<section class="panel panel-hero" id="hero">
+  <div class="aura"></div>
+  <div class="sweep"></div>
+  <p class="eyebrow" id="h-eyebrow">// AI Agency · Production · Strategy</p>
+  <div style="text-align:center;">
+    <h1 class="big-title hero-title" id="h-title">
+      <em>FLICK</em>
+      <span class="hero-sys dim">.SYSTEMS</span>
+    </h1>
   </div>
-  <p class="hero-sub">Transform your business with cutting-edge AI. Strategy, development, and automation that drives real results.</p>
-  <div class="hero-ctas">
+  <p class="body-text hero-sub" id="h-sub">Transform your business with cutting-edge AI. Strategy, development, and automation that drives real results.</p>
+  <div class="hero-ctas" id="h-ctas">
     <a href="#pricing" class="btn btn-cyan"><span>Start a Project</span></a>
     <a href="#work" class="btn btn-ghost"><span>View Work →</span></a>
   </div>
 </section>
 
-<div id="stats">
-  <div class="stats-grid">
-    <div class="stat reveal"><div class="stat-num">150+</div><div class="stat-label">Projects Delivered</div></div>
-    <div class="stat reveal"><div class="stat-num">98%</div><div class="stat-label">Client Retention</div></div>
-    <div class="stat reveal"><div class="stat-num">50M+</div><div class="stat-label">Data Points Processed</div></div>
-    <div class="stat reveal"><div class="stat-num">24/7</div><div class="stat-label">AI Uptime</div></div>
-  </div>
-</div>
-
-<div class="divider"></div>
-
-<section id="services">
-  <div class="container">
-    <p class="section-label reveal">// What We Do</p>
-    <h2 class="section-title reveal">Full-Spectrum <em>AI Services</em></h2>
-    <p class="reveal" style="color:var(--dim2);max-width:580px;font-size:0.95rem;line-height:1.75;font-weight:300;">From strategy to deployment, we handle every aspect of your AI transformation.</p>
-    <div class="services-grid">
-      <div class="svc reveal"><div class="svc-icon">// 01</div><div class="svc-title">AI Strategy</div><p class="svc-desc">Custom AI roadmaps aligned with your business objectives. No hype — just what actually works.</p></div>
-      <div class="svc reveal"><div class="svc-icon">// 02</div><div class="svc-title">Custom Development</div><p class="svc-desc">Bespoke AI solutions built from the ground up — tailored to your market, your users, your goals.</p></div>
-      <div class="svc reveal"><div class="svc-icon">// 03</div><div class="svc-title">Automation</div><p class="svc-desc">Streamline operations with intelligent automation. Stop paying humans to do what machines do better.</p></div>
-      <div class="svc reveal"><div class="svc-icon">// 04</div><div class="svc-title">Data Intelligence</div><p class="svc-desc">Transform raw data into actionable insights with advanced analytics and ML pipelines built to scale.</p></div>
-      <div class="svc reveal"><div class="svc-icon">// 05</div><div class="svc-title">Neural Networks</div><p class="svc-desc">Deep learning models for complex pattern recognition — computer vision, NLP, and beyond.</p></div>
-      <div class="svc reveal"><div class="svc-icon">// 06</div><div class="svc-title">MLOps</div><p class="svc-desc">End-to-end ML lifecycle management and deployment. Build once, run forever, scale infinitely.</p></div>
+<!-- ═══ PANEL 2 — PROBLEM ═══ -->
+<section class="panel panel-problem" id="problem">
+  <div class="aura" style="background:radial-gradient(circle,rgba(112,0,255,0.06) 0%,transparent 70%);"></div>
+  <div class="inner" style="text-align:center;max-width:900px;">
+    <p class="section-label" id="p-label">// The Problem</p>
+    <h2 class="big-title problem-title" id="p-title">Most AI <em>doesn't</em><br/><span class="dim">actually ship.</span></h2>
+    <p class="body-text" id="p-body" style="margin:0 auto;text-align:center;">Businesses get sold on AI decks that impress in the boardroom and die in production. The gap between "AI is possible" and "AI is running in your business" is where most projects fail. We close that gap.</p>
+    <div class="stat-row" id="p-stats">
+      <div class="stat-item"><div class="stat-n">85%</div><div class="stat-l">AI projects fail to deploy</div></div>
+      <div class="stat-item"><div class="stat-n">$2.5T</div><div class="stat-l">Lost to failed automation</div></div>
+      <div class="stat-item"><div class="stat-n">6mo+</div><div class="stat-l">Average time to value</div></div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
-
-<section id="pricing">
-  <div class="container">
-    <p class="section-label reveal">// Investment</p>
-    <h2 class="section-title reveal">Simple <em>Pricing</em></h2>
-    <p class="reveal" style="color:var(--dim2);max-width:580px;font-size:0.95rem;line-height:1.75;font-weight:300;">No hidden fees. No long contracts. Just real work at fair prices.</p>
-    <div class="pricing-grid">
-
-      <div class="price-card reveal">
-        <div class="price-tag">// Entry Point</div>
-        <div class="price-name">Discovery Call</div>
-        <div class="price-amount">$150</div>
-        <div class="price-period">one-time · 60 minutes</div>
-        <p class="price-desc">A focused strategy session where we audit your operations, identify AI opportunities, and hand you a clear roadmap.</p>
-        <ul class="price-features">
-          <li>60-min deep dive session</li>
-          <li>Operations audit</li>
-          <li>AI opportunity mapping</li>
-          <li>Written roadmap delivered</li>
-        </ul>
-        <a href="https://buy.stripe.com/14A3cveukcImfqH0rdbo403" class="btn-price" target="_blank"><span>Book Now →</span></a>
-      </div>
-
-      <div class="price-card featured reveal">
-        <div class="price-tag">// Most Popular</div>
-        <div class="price-name">AI Retainer</div>
-        <div class="price-amount">$1,500</div>
-        <div class="price-period">per month · ongoing</div>
-        <p class="price-desc">Your dedicated AI team. Continuous development, automation, strategy, and support — we become part of your operation.</p>
-        <ul class="price-features">
-          <li>Dedicated development hours</li>
-          <li>Ongoing automation builds</li>
-          <li>Monthly strategy sessions</li>
-          <li>Priority support & deployment</li>
-          <li>Full access to our stack</li>
-        </ul>
-        <a href="https://buy.stripe.com/eVqfZh0Du6jY5Q7fm7bo404" class="btn-price" target="_blank"><span>Start Retainer →</span></a>
-      </div>
-
-      <div class="price-card reveal">
-        <div class="price-tag">// Custom Build</div>
-        <div class="price-name">Project</div>
-        <div class="price-amount">$2,500</div>
-        <div class="price-period">starting price · scoped</div>
-        <p class="price-desc">A defined, scoped AI project — designed, built, tested, and deployed by Flick.Systems. Final price based on scope.</p>
-        <ul class="price-features">
-          <li>Full project scoping</li>
-          <li>Custom AI development</li>
-          <li>Testing & QA</li>
-          <li>Deployment & handoff</li>
-          <li>30-day post-launch support</li>
-        </ul>
-        <a href="https://buy.stripe.com/eVqeVdae4gYC1zR1vhbo405" class="btn-price" target="_blank"><span>Start Project →</span></a>
-      </div>
-
+<!-- ═══ PANEL 3 — SOLUTION ═══ -->
+<section class="panel panel-solution" id="solution">
+  <div class="aura"></div>
+  <div class="inner">
+    <div>
+      <p class="section-label" id="s-label">// The Solution</p>
+      <h2 class="big-title solution-title" id="s-title">We build things<br/>that <em>actually</em><br/>work.</h2>
+      <p class="body-text" id="s-body">No hype. No endless strategy decks. We embed into your operation, identify the highest-ROI automation opportunities, and ship working systems — fast. On deadline, on budget, in the real world.</p>
+    </div>
+    <div class="solution-visual" id="s-visual">
+      <div class="sv-box sv-box1"></div>
+      <div class="sv-box sv-box2"></div>
+      <div class="sv-label">FLK</div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
-
-<section id="work">
-  <div class="container">
-    <p class="section-label reveal">// Case Studies</p>
-    <h2 class="section-title reveal">Selected <em>Work</em></h2>
-    <div class="work-grid">
-      <div class="work-card reveal"><div class="work-tag">// Automation · E-Commerce</div><div class="work-title">Marketplace Automation Engine</div><p class="work-desc">Built a full marketplace posting automation system that eliminated hours of manual daily work — cross-platform, real-time, zero downtime.</p><div class="work-result">↑ 340% time saved · 99.8% uptime</div></div>
-      <div class="work-card reveal"><div class="work-tag">// AI Strategy · Consulting</div><div class="work-title">Enterprise AI Integration</div><p class="work-desc">End-to-end AI integration into a 50-person ops team — CRM automation, lead scoring, and predictive analytics pipeline deployed in 6 weeks.</p><div class="work-result">↑ 4.2x ROI · 6 week deployment</div></div>
-      <div class="work-card reveal"><div class="work-tag">// Production · Brand</div><div class="work-title">AI-Powered Content Pipeline</div><p class="work-desc">Designed and deployed a content generation and distribution pipeline that produces brand-consistent output at 10x the speed of a human team.</p><div class="work-result">↑ 10x output · 60% cost reduction</div></div>
-      <div class="work-card reveal"><div class="work-tag">// Neural Networks · Data</div><div class="work-title">Predictive Analytics Platform</div><p class="work-desc">Custom ML model for real-time demand forecasting — trained on 50M+ data points, deployed on edge infrastructure for sub-100ms inference.</p><div class="work-result">↑ 89% forecast accuracy · &lt;100ms</div></div>
+<!-- ═══ PANEL 4 — SERVICES ═══ -->
+<section class="panel panel-services" id="services">
+  <div class="aura" style="background:radial-gradient(circle,rgba(112,0,255,0.05) 0%,transparent 70%);"></div>
+  <div class="inner">
+    <p class="section-label" id="sv-label" style="text-align:center;">// What We Do</p>
+    <h2 class="big-title services-title" id="sv-title">Full-Spectrum <em>AI Services</em></h2>
+    <div class="svc-grid" id="sv-grid">
+      <div class="svc"><div class="svc-icon">// 01</div><div class="svc-title">AI Strategy</div><p class="svc-desc">Custom AI roadmaps aligned with your business objectives. No hype — just what actually works.</p></div>
+      <div class="svc"><div class="svc-icon">// 02</div><div class="svc-title">Custom Development</div><p class="svc-desc">Bespoke AI solutions built from the ground up — tailored to your market, your users, your goals.</p></div>
+      <div class="svc"><div class="svc-icon">// 03</div><div class="svc-title">Automation</div><p class="svc-desc">Streamline operations with intelligent automation. Stop paying humans to do what machines handle better.</p></div>
+      <div class="svc"><div class="svc-icon">// 04</div><div class="svc-title">Data Intelligence</div><p class="svc-desc">Transform raw data into actionable insights with advanced analytics and ML pipelines built to scale.</p></div>
+      <div class="svc"><div class="svc-icon">// 05</div><div class="svc-title">Neural Networks</div><p class="svc-desc">Deep learning models for complex pattern recognition — computer vision, NLP, and beyond.</p></div>
+      <div class="svc"><div class="svc-icon">// 06</div><div class="svc-title">MLOps</div><p class="svc-desc">End-to-end ML lifecycle management and deployment. Build once, run forever, scale infinitely.</p></div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<!-- ═══ PANEL 5 — WORK ═══ -->
+<section class="panel panel-work" id="work">
+  <div class="aura"></div>
+  <div class="inner">
+    <p class="section-label" id="w-label" style="text-align:center;">// Case Studies</p>
+    <h2 class="big-title work-title" id="w-title">Selected <em>Work</em></h2>
+    <div class="work-grid" id="w-grid">
+      <div class="wcard"><div class="wtag">// Automation · E-Commerce</div><div class="wtitle">Marketplace Automation Engine</div><p class="wdesc">Full marketplace posting automation — eliminated hours of manual daily work. Cross-platform, real-time, zero downtime.</p><div class="wresult">↑ 340% time saved · 99.8% uptime</div></div>
+      <div class="wcard"><div class="wtag">// AI Strategy · Consulting</div><div class="wtitle">Enterprise AI Integration</div><p class="wdesc">End-to-end AI into a 50-person ops team — CRM automation, lead scoring, and predictive analytics in 6 weeks.</p><div class="wresult">↑ 4.2x ROI · 6 week deployment</div></div>
+      <div class="wcard"><div class="wtag">// Production · Brand</div><div class="wtitle">AI-Powered Content Pipeline</div><p class="wdesc">Content generation and distribution pipeline — brand-consistent output at 10x the speed of a human team.</p><div class="wresult">↑ 10x output · 60% cost reduction</div></div>
+      <div class="wcard"><div class="wtag">// Neural Networks · Data</div><div class="wtitle">Predictive Analytics Platform</div><p class="wdesc">Custom ML model for real-time demand forecasting — 50M+ data points, sub-100ms inference on edge.</p><div class="wresult">↑ 89% forecast accuracy · &lt;100ms</div></div>
+    </div>
+  </div>
+</section>
 
-<section id="about">
-  <div class="container">
-    <p class="section-label reveal">// About</p>
-    <h2 class="section-title reveal">Built Different.<em> On Purpose.</em></h2>
-    <div class="about-inner">
-      <div class="about-text reveal-l">
-        <p>Flick.Systems exists because most AI agencies are selling hype. We're not interested in decks that impress and systems that don't ship. We build things that work — on deadline, on budget, in the real world.</p>
-        <p>We specialize in the gap between "AI is possible" and "AI is running in your business." That gap is where most projects die. We close it.</p>
-        <p>Whether you need a single automation or a complete AI transformation — we move fast, communicate clearly, and deliver what we promise.</p>
-        <div style="margin-top:2rem;"><a href="#pricing" class="btn btn-cyan"><span>Let's Talk</span></a></div>
+<!-- ═══ PANEL 6 — PRICING ═══ -->
+<section class="panel panel-pricing" id="pricing">
+  <div class="aura" style="background:radial-gradient(circle,rgba(112,0,255,0.05) 0%,transparent 70%);"></div>
+  <div class="inner">
+    <p class="section-label" id="pr-label" style="text-align:center;">// Investment</p>
+    <h2 class="big-title pricing-title" id="pr-title">Simple <em>Pricing</em></h2>
+    <div class="pricing-grid" id="pr-grid">
+      <div class="pcard">
+        <div class="ptag">// Entry Point</div>
+        <div class="pname">Discovery Call</div>
+        <div class="pamount">$150</div>
+        <div class="pperiod">one-time · 60 minutes</div>
+        <p class="pdesc">A focused strategy session. We audit your operations, identify AI opportunities, and hand you a written roadmap.</p>
+        <ul class="pfeatures"><li>60-min deep dive session</li><li>Operations audit</li><li>AI opportunity mapping</li><li>Written roadmap delivered</li></ul>
+        <a href="https://buy.stripe.com/14A3cveukcImfqH0rdbo403" class="btn-p" target="_blank"><span>Book Now →</span></a>
       </div>
-      <div class="about-visual reveal">
-        <div class="av-box av-box1"></div>
-        <div class="av-box av-box2"></div>
-        <div class="av-label">FLK</div>
+      <div class="pcard featured">
+        <div class="ptag">// Most Popular</div>
+        <div class="pname">AI Retainer</div>
+        <div class="pamount">$1,500</div>
+        <div class="pperiod">per month · ongoing</div>
+        <p class="pdesc">Your dedicated AI team. Continuous development, automation, strategy, and support — we become part of your operation.</p>
+        <ul class="pfeatures"><li>Dedicated dev hours</li><li>Ongoing automation builds</li><li>Monthly strategy sessions</li><li>Priority support & deployment</li><li>Full access to our stack</li></ul>
+        <a href="https://buy.stripe.com/eVqfZh0Du6jY5Q7fm7bo404" class="btn-p" target="_blank"><span>Start Retainer →</span></a>
+      </div>
+      <div class="pcard">
+        <div class="ptag">// Custom Build</div>
+        <div class="pname">Project</div>
+        <div class="pamount">$2,500</div>
+        <div class="pperiod">starting price · scoped</div>
+        <p class="pdesc">A defined, scoped AI project — designed, built, tested, and deployed. Final price based on scope.</p>
+        <ul class="pfeatures"><li>Full project scoping</li><li>Custom AI development</li><li>Testing & QA</li><li>Deployment & handoff</li><li>30-day post-launch support</li></ul>
+        <a href="https://buy.stripe.com/eVqeVdae4gYC1zR1vhbo405" class="btn-p" target="_blank"><span>Start Project →</span></a>
       </div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
-
-<section id="cta">
-  <div class="container">
-    <p class="section-label reveal">// Let's Build</p>
-    <h2 class="section-title reveal">Ready to <em>Transform?</em></h2>
-    <div class="cta-wrap">
-      <p class="cta-body reveal">Join the companies using AI to redefine their industries. Your transformation starts with a conversation.</p>
-      <div class="cta-btns reveal">
-        <a href="https://buy.stripe.com/14A3cveukcImfqH0rdbo403" class="btn btn-cyan" target="_blank"><span>Book Discovery Call</span></a>
-        <a href="mailto:Jasonflick333@gmail.com" class="btn btn-ghost"><span>Send a Message</span></a>
-      </div>
+<!-- ═══ PANEL 7 — CTA ═══ -->
+<section class="panel panel-cta" id="cta">
+  <div class="aura"></div>
+  <div class="sweep" style="animation-delay:2s;"></div>
+  <div class="inner">
+    <p class="section-label" id="c-label">// Let's Build</p>
+    <h2 class="big-title cta-title" id="c-title">Ready to<br/><em>Transform?</em></h2>
+    <p class="body-text" id="c-body" style="text-align:center;margin:2rem auto 0;">Your AI transformation starts with a conversation. We move fast, communicate clearly, and deliver what we promise.</p>
+    <div class="cta-btns" id="c-btns">
+      <a href="https://buy.stripe.com/14A3cveukcImfqH0rdbo403" class="btn btn-cyan" target="_blank"><span>Book Discovery Call</span></a>
+      <a href="mailto:Jasonflick333@gmail.com" class="btn btn-ghost"><span>Send a Message</span></a>
     </div>
   </div>
 </section>
@@ -360,15 +384,19 @@
 </footer>
 
 <script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ── CURSOR ── */
 const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
 let mx=-100,my=-100,rx=-100,ry=-100;
 document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
 (function ac(){rx+=(mx-rx)*0.13;ry+=(my-ry)*0.13;cur.style.left=mx+'px';cur.style.top=my+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ac);})();
-document.querySelectorAll('a,button,.svc,.work-card,.price-card').forEach(el=>{
+document.querySelectorAll('a,button,.svc,.wcard,.pcard').forEach(el=>{
   el.addEventListener('mouseenter',()=>{ring.style.width='46px';ring.style.height='46px';ring.style.opacity='0.8';ring.style.borderColor='var(--c2)';cur.style.transform='translate(-50%,-50%) scale(1.6)';});
   el.addEventListener('mouseleave',()=>{ring.style.width='26px';ring.style.height='26px';ring.style.opacity='0.4';ring.style.borderColor='var(--c1)';cur.style.transform='translate(-50%,-50%) scale(1)';});
 });
 
+/* ── PARTICLES ── */
 const pw=document.getElementById('particles');
 for(let i=0;i<28;i++){
   const p=document.createElement('div');p.className='particle';
@@ -377,9 +405,7 @@ for(let i=0;i<28;i++){
   pw.appendChild(p);
 }
 
-const ro=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('on');ro.unobserve(x.target);}}),{threshold:0.1});
-document.querySelectorAll('.reveal,.reveal-l').forEach(el=>ro.observe(el));
-
+/* ── GLITCH LAYER ── */
 const gl=document.getElementById('gl');
 function spawnStrip(){
   const s=document.createElement('div');
@@ -389,20 +415,130 @@ function spawnStrip(){
 }spawnStrip();
 
 function bigGlitch(){
-  const n=3+Math.floor(Math.random()*5);
-  for(let i=0;i<n;i++){
+  for(let i=0;i<3+Math.floor(Math.random()*5);i++){
     const s=document.createElement('div');
     s.style.cssText=`position:absolute;top:${Math.random()*94}%;left:${Math.random()*8}%;right:${Math.random()*8}%;height:${Math.random()*4+1}px;background:${Math.random()>.5?'var(--c1)':'var(--c2)'};opacity:${0.2+Math.random()*0.6};pointer-events:none;`;
     gl.appendChild(s);setTimeout(()=>s.remove(),70+Math.random()*90);
   }
-  const tint=document.createElement('div');
-  tint.style.cssText=`position:absolute;inset:0;background:${Math.random()>.5?'rgba(0,245,255,0.025)':'rgba(112,0,255,0.02)'};pointer-events:none;`;
-  gl.appendChild(tint);setTimeout(()=>tint.remove(),90);
   playGlitchSound();
   setTimeout(bigGlitch,5000+Math.random()*13000);
 }setTimeout(bigGlitch,3500);
 
-const ht=document.querySelector('.hero-title');
+/* ── NAV SCROLL ── */
+window.addEventListener('scroll',()=>{
+  document.getElementById('nav').classList.toggle('scrolled',window.scrollY>80);
+  const prog=window.scrollY/(document.body.scrollHeight-window.innerHeight)*100;
+  document.getElementById('progress').style.width=prog+'%';
+});
+
+/* ── CHAPTER DOTS ── */
+const dots=document.querySelectorAll('.ch-dot');
+const panels=['hero','problem','solution','services','work','pricing','cta'];
+dots.forEach((d,i)=>{
+  d.addEventListener('click',()=>document.getElementById(panels[i]).scrollIntoView({behavior:'smooth'}));
+});
+
+const panelObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const idx=panels.indexOf(e.target.id);
+      dots.forEach(d=>d.classList.remove('active'));
+      if(idx>=0)dots[idx].classList.add('active');
+    }
+  });
+},{threshold:0.4});
+panels.forEach(id=>panelObs.observe(document.getElementById(id)));
+
+/* ── GSAP SCROLL ANIMATIONS ── */
+
+// HERO
+gsap.timeline()
+  .to('#h-eyebrow',{opacity:1,y:0,duration:0.8,ease:'power2.out'},0.3)
+  .to('#h-title',{opacity:1,y:0,duration:1,ease:'power3.out'},0.5)
+  .to('#h-sub',{opacity:1,y:0,duration:0.8,ease:'power2.out'},0.8)
+  .to('#h-ctas',{opacity:1,y:0,duration:0.8,ease:'power2.out'},1.0);
+
+// Helper: animate panel on scroll
+function animPanel(trigger, items){
+  const tl=gsap.timeline({
+    scrollTrigger:{trigger,start:'top 65%',toggleActions:'play none none none'}
+  });
+  items.forEach(([el,props,delay])=>tl.to(el,{...props,duration:0.8,ease:'power2.out'},delay));
+  return tl;
+}
+
+// PROBLEM
+gsap.set(['#p-label','#p-title','#p-body','#p-stats'],{opacity:0,y:40});
+animPanel('#problem',[
+  ['#p-label',{opacity:1,y:0},0],
+  ['#p-title',{opacity:1,y:0},0.15],
+  ['#p-body',{opacity:1,y:0},0.3],
+  ['#p-stats',{opacity:1,y:0},0.5],
+]);
+
+// SOLUTION
+gsap.set(['#s-label','#s-title','#s-body','#s-visual'],{opacity:0,y:40});
+animPanel('#solution',[
+  ['#s-label',{opacity:1,y:0},0],
+  ['#s-title',{opacity:1,y:0},0.15],
+  ['#s-body',{opacity:1,y:0},0.3],
+  ['#s-visual',{opacity:1,y:0},0.45],
+]);
+
+// SERVICES
+gsap.set(['#sv-label','#sv-title'],{opacity:0,y:40});
+gsap.set('#sv-grid',{opacity:0,y:60});
+animPanel('#services',[
+  ['#sv-label',{opacity:1,y:0},0],
+  ['#sv-title',{opacity:1,y:0},0.15],
+  ['#sv-grid',{opacity:1,y:0},0.35],
+]);
+// Stagger svc cards
+ScrollTrigger.create({
+  trigger:'#services',start:'top 65%',
+  onEnter:()=>gsap.to('.svc',{opacity:1,y:0,stagger:0.1,duration:0.6,ease:'power2.out',delay:0.5})
+});
+gsap.set('.svc',{opacity:0,y:30});
+
+// WORK
+gsap.set(['#w-label','#w-title'],{opacity:0,y:40});
+gsap.set('#w-grid',{opacity:0});
+gsap.set('.wcard',{opacity:0,y:30});
+animPanel('#work',[
+  ['#w-label',{opacity:1,y:0},0],
+  ['#w-title',{opacity:1,y:0},0.15],
+  ['#w-grid',{opacity:1},0.3],
+]);
+ScrollTrigger.create({
+  trigger:'#work',start:'top 65%',
+  onEnter:()=>gsap.to('.wcard',{opacity:1,y:0,stagger:0.12,duration:0.7,ease:'power2.out',delay:0.4})
+});
+
+// PRICING
+gsap.set(['#pr-label','#pr-title'],{opacity:0,y:40});
+gsap.set('#pr-grid',{opacity:0});
+gsap.set('.pcard',{opacity:0,y:30});
+animPanel('#pricing',[
+  ['#pr-label',{opacity:1,y:0},0],
+  ['#pr-title',{opacity:1,y:0},0.15],
+  ['#pr-grid',{opacity:1},0.3],
+]);
+ScrollTrigger.create({
+  trigger:'#pricing',start:'top 65%',
+  onEnter:()=>gsap.to('.pcard',{opacity:1,y:0,stagger:0.15,duration:0.7,ease:'power2.out',delay:0.4})
+});
+
+// CTA
+gsap.set(['#c-label','#c-title','#c-body','#c-btns'],{opacity:0,y:40});
+animPanel('#cta',[
+  ['#c-label',{opacity:1,y:0},0],
+  ['#c-title',{opacity:1,y:0},0.15],
+  ['#c-body',{opacity:1,y:0},0.3],
+  ['#c-btns',{opacity:1,y:0},0.5],
+]);
+
+// Hero title twitch
+const ht=document.querySelector('#h-title em');
 function twitch(){
   if(!ht)return;
   ht.style.transition='none';
@@ -410,8 +546,9 @@ function twitch(){
   ht.style.filter=`hue-rotate(${Math.random()*60-30}deg) brightness(${1.1+Math.random()*0.35})`;
   setTimeout(()=>{ht.style.transform='';ht.style.filter='';},65+Math.random()*100);
   setTimeout(twitch,2000+Math.random()*6000);
-}twitch();
+}setTimeout(twitch,2000);
 
+/* ── AUDIO ENGINE ── */
 let actx=null,soundOn=false,ambNodes=[],schedT=null;
 function ctx(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx;}
 function tone(f,t,v,d,delay=0){if(!soundOn)return;try{const c=ctx(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;const ts=c.currentTime+delay;g.gain.setValueAtTime(0,ts);g.gain.linearRampToValueAtTime(v,ts+0.008);g.gain.exponentialRampToValueAtTime(0.0001,ts+d);o.start(ts);o.stop(ts+d+0.05);}catch(e){}}
@@ -431,7 +568,7 @@ function startAmbient(){if(!soundOn||!actx)return;try{
 }catch(e){}}
 function stopAmbient(){ambNodes.forEach(n=>{try{n.stop();}catch(e){}});ambNodes=[];if(schedT)clearTimeout(schedT);}
 function toggleSound(){soundOn=!soundOn;const btn=document.getElementById('soundBtn');if(soundOn){ctx();if(actx.state==='suspended')actx.resume();btn.textContent='[ SFX: ON ]';btn.classList.add('on');startAmbient();setTimeout(()=>playClick(),150);}else{btn.textContent='[ SFX ]';btn.classList.remove('on');stopAmbient();}}
-document.querySelectorAll('a,button,.svc,.work-card,.price-card').forEach(el=>{el.addEventListener('mouseenter',playHover);el.addEventListener('click',playClick);});
+document.querySelectorAll('a,button,.svc,.wcard,.pcard').forEach(el=>{el.addEventListener('mouseenter',playHover);el.addEventListener('click',playClick);});
 </script>
 </body>
 </html>
