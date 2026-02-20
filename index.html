@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --c1:#00f5ff; --c1d:rgba(0,245,255,0.4); --c1x:rgba(0,245,255,0.08);
-      --c2:#7000ff; --c2d:rgba(112,0,255,0.5); --c2x:rgba(112,0,255,0.07);
+      --c1:#00f5ff; --c1d:rgba(0,245,255,0.4); --c1x:rgba(0,245,255,0.07);
+      --c2:#7000ff; --c2d:rgba(112,0,255,0.5); --c2x:rgba(112,0,255,0.06);
       --white:#e8f0f8; --dim:#2a3a4a; --dim2:#4a6070;
       --bg:#020408; --bg2:#050810;
       --glass:rgba(255,255,255,0.02); --border:rgba(0,245,255,0.08);
@@ -19,11 +19,9 @@
     html{scroll-behavior:smooth;}
     body{background:var(--bg);color:var(--white);font-family:'Rajdhani',sans-serif;overflow-x:hidden;cursor:none;}
 
-    /* ── CURSOR ── */
     #cur{position:fixed;width:7px;height:7px;background:var(--c1);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 14px var(--c1),0 0 28px var(--c1d);transition:transform 0.06s;}
     #cur-ring{position:fixed;width:26px;height:26px;border:1px solid var(--c1);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);opacity:0.4;transition:width 0.18s,height 0.18s,opacity 0.18s,border-color 0.18s;}
 
-    /* ── OVERLAYS ── */
     .scanlines{position:fixed;inset:0;z-index:1000;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);}
     .vhs{position:fixed;inset:0;z-index:998;pointer-events:none;animation:vhsF 0.13s steps(1) infinite;}
     @keyframes vhsF{0%{opacity:.04}20%{opacity:.01}40%{opacity:.06}60%{opacity:.02}80%{opacity:.05}100%{opacity:.03}}
@@ -33,7 +31,6 @@
     #particles{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
     #gl{position:fixed;inset:0;z-index:850;pointer-events:none;}
 
-    /* ── GLITCH ANIMATIONS ── */
     @keyframes glitchTitle{
       0%,86%,100%{text-shadow:0 0 60px rgba(0,245,255,0.8),0 0 120px rgba(0,245,255,0.3);transform:translate(0) skewX(0);clip-path:none;}
       87%{text-shadow:-8px 0 0 var(--c2),8px 0 0 var(--c1);transform:translate(5px,1px) skewX(-2.5deg);clip-path:polygon(0 20%,100% 20%,100% 45%,0 45%);}
@@ -42,15 +39,8 @@
       93%{text-shadow:5px 0 0 rgba(112,0,255,0.9),-5px 0 0 var(--c1);transform:translate(-3px,0);clip-path:polygon(0 5%,100% 5%,100% 18%,0 18%);}
       93.4%{text-shadow:0 0 60px rgba(0,245,255,0.8);transform:translate(0);clip-path:none;}
     }
-    @keyframes subtitleFlicker{
-      0%,89%,100%{opacity:1}90%{opacity:0.1}90.5%{opacity:1}91%{opacity:0.3}91.4%{opacity:1}
-    }
-    @keyframes sectionGlitch{
-      0%,92%,100%{clip-path:none;transform:none;}
-      93%{clip-path:polygon(0 35%,100% 35%,100% 55%,0 55%);transform:translateX(5px);}
-      93.5%{clip-path:polygon(0 10%,100% 10%,100% 28%,0 28%);transform:translateX(-5px);}
-      94%{clip-path:none;transform:none;}
-    }
+    @keyframes subtitleFlicker{0%,89%,100%{opacity:1}90%{opacity:0.1}90.5%{opacity:1}91%{opacity:0.3}91.4%{opacity:1}}
+    @keyframes sectionGlitch{0%,92%,100%{clip-path:none;transform:none;}93%{clip-path:polygon(0 35%,100% 35%,100% 55%,0 55%);transform:translateX(5px);}93.5%{clip-path:polygon(0 10%,100% 10%,100% 28%,0 28%);transform:translateX(-5px);}94%{clip-path:none;transform:none;}}
     @keyframes logoBlink{0%,100%{opacity:1}91%{opacity:1}92%{opacity:0.15}92.4%{opacity:1}}
     @keyframes borderPulse{0%,100%{border-color:var(--border)}50%{border-color:rgba(0,245,255,0.18)}}
     @keyframes cardFlicker{0%,94%,100%{opacity:1}95%{opacity:0.2}95.4%{opacity:1}96%{opacity:0.5}96.3%{opacity:1}}
@@ -58,15 +48,13 @@
     @keyframes scanL{0%{top:-3px;opacity:0}5%{opacity:1}95%{opacity:0.7}100%{top:100vh;opacity:0}}
     @keyframes heroPulse{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.8;transform:translate(-50%,-50%) scale(1.08)}}
     @keyframes floatUp{0%{transform:translateY(105vh);opacity:0}8%{opacity:0.6}92%{opacity:0.4}100%{transform:translateY(-10vh);opacity:0}}
-    @keyframes statCount{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pricingGlow{0%,100%{box-shadow:0 0 30px rgba(0,245,255,0.08)}50%{box-shadow:0 0 60px rgba(0,245,255,0.18),0 0 100px rgba(112,0,255,0.08)}}
 
-    /* ── REVEAL ── */
     .reveal{opacity:0;transform:translateY(28px);transition:opacity 0.85s ease,transform 0.85s ease;}
     .reveal.on{opacity:1;transform:translateY(0);}
     .reveal-l{opacity:0;transform:translateX(-28px);transition:opacity 0.85s ease,transform 0.85s ease;}
     .reveal-l.on{opacity:1;transform:translateX(0);}
 
-    /* ── NAV ── */
     nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;background:rgba(2,4,8,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
     .nav-logo{font-family:'Orbitron',monospace;font-weight:900;font-size:1rem;letter-spacing:0.16em;color:var(--c1);text-shadow:0 0 20px var(--c1d);animation:logoBlink 8s ease-in-out infinite;}
     .nav-logo span{color:var(--dim2);}
@@ -78,21 +66,16 @@
     .sound-btn{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--dim2);background:none;border:1px solid var(--border);padding:0.4rem 0.9rem;cursor:none;transition:all 0.25s;margin-left:0.8rem;}
     .sound-btn:hover,.sound-btn.on{color:var(--c1);border-color:var(--c1);box-shadow:0 0 12px var(--c1d);}
 
-    /* ── HERO ── */
     #hero{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:9rem 2rem 5rem;overflow:hidden;}
     .hero-aura{position:absolute;width:1000px;height:1000px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(0,245,255,0.06) 0%,rgba(112,0,255,0.04) 35%,transparent 70%);top:50%;left:50%;animation:heroPulse 8s ease-in-out infinite;}
     .scan-sweep{position:absolute;left:0;right:0;height:1px;pointer-events:none;z-index:5;background:linear-gradient(90deg,transparent 0%,var(--c2) 20%,var(--c1) 60%,transparent 100%);box-shadow:0 0 20px var(--c1),0 0 50px var(--c2d);animation:scanL 9s ease-in-out infinite 1s;}
     .hero-eyebrow{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.55em;color:var(--c1);text-transform:uppercase;margin-bottom:2rem;opacity:0;animation:fadeUp 0.8s ease 0.2s forwards;}
-    .hero-title{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(4rem,12vw,11rem);line-height:0.88;letter-spacing:-0.02em;color:var(--c1);animation:glitchTitle 6s ease-in-out infinite;opacity:0;animation-fill-mode:forwards;animation-delay:0.4s;}
-    /* Override: start visible after fadeUp */
-    .hero-title{opacity:0;animation:fadeUp 0.8s ease 0.4s forwards, glitchTitle 6s ease-in-out 1.5s infinite;}
     .hero-title-wrap{opacity:0;animation:fadeUp 0.8s ease 0.4s forwards;}
-    .hero-title{opacity:1;animation:glitchTitle 6s ease-in-out 1.5s infinite;}
+    .hero-title{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(4rem,12vw,11rem);line-height:0.88;letter-spacing:-0.02em;color:var(--c1);animation:glitchTitle 6s ease-in-out 1.5s infinite;}
     .hero-sys{display:block;font-size:0.38em;letter-spacing:0.4em;color:var(--dim2);margin-top:0.3em;font-weight:400;animation:subtitleFlicker 11s ease-in-out infinite;}
     .hero-sub{font-size:clamp(0.85rem,1.8vw,1.1rem);font-weight:300;color:var(--dim2);letter-spacing:0.18em;text-transform:uppercase;max-width:560px;margin:2.5rem auto 3.5rem;opacity:0;animation:fadeUp 0.8s ease 0.7s forwards;}
     .hero-ctas{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp 0.8s ease 0.9s forwards;}
 
-    /* ── STATS ── */
     #stats{position:relative;z-index:2;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
     .stats-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:3rem 2rem;}
     .stat{text-align:center;padding:1.5rem 1rem;border-right:1px solid var(--border);}
@@ -100,7 +83,6 @@
     .stat-num{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(2rem,4vw,3rem);color:var(--c1);text-shadow:0 0 30px var(--c1d);letter-spacing:0.02em;}
     .stat-label{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.3em;color:var(--dim2);text-transform:uppercase;margin-top:0.5rem;}
 
-    /* ── BUTTONS ── */
     .btn{font-family:'Share Tech Mono',monospace;font-size:0.68rem;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;padding:1rem 2.5rem;border:1px solid;cursor:none;position:relative;overflow:hidden;transition:all 0.3s;display:inline-block;}
     .btn::before{content:'';position:absolute;inset:0;transform:translateX(-101%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
     .btn:hover::before{transform:translateX(0);}
@@ -110,9 +92,8 @@
     .btn-cyan:hover{color:var(--bg);box-shadow:0 0 40px var(--c1d);}
     .btn-ghost{color:var(--dim2);border-color:var(--dim);}
     .btn-ghost::before{background:rgba(255,255,255,0.05);}
-    .btn-ghost:hover{color:var(--white);box-shadow:none;}
+    .btn-ghost:hover{color:var(--white);}
 
-    /* ── SECTIONS ── */
     section{position:relative;z-index:2;padding:6rem 2rem;}
     .container{max-width:1200px;margin:0 auto;}
     .divider{position:relative;z-index:2;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);}
@@ -120,10 +101,9 @@
     .section-title{font-family:'Orbitron',monospace;font-weight:700;font-size:clamp(1.6rem,3.5vw,2.8rem);letter-spacing:0.02em;margin-bottom:1.2rem;animation:sectionGlitch 14s ease-in-out infinite;}
     .section-title em{color:var(--c1);font-style:normal;}
 
-    /* ── SERVICES ── */
     #services{background:var(--bg2);}
     .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:3rem;}
-    .svc{background:var(--glass);border:1px solid var(--border);padding:2.2rem;position:relative;overflow:hidden;transition:all 0.3s;cursor:none;animation:borderPulse 6s ease-in-out infinite;animation-delay:calc(var(--i)*0.4s);}
+    .svc{background:var(--glass);border:1px solid var(--border);padding:2.2rem;position:relative;overflow:hidden;transition:all 0.3s;cursor:none;animation:borderPulse 6s ease-in-out infinite;}
     .svc::before{content:'';position:absolute;top:0;left:0;width:0;height:2px;background:linear-gradient(90deg,var(--c1),var(--c2));transition:width 0.5s;}
     .svc:hover::before{width:100%;}
     .svc:hover{border-color:rgba(0,245,255,0.25);box-shadow:0 0 40px rgba(0,245,255,0.05),inset 0 0 30px rgba(0,245,255,0.02);transform:translateY(-4px);}
@@ -131,8 +111,32 @@
     .svc-title{font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:700;letter-spacing:0.08em;margin-bottom:0.9rem;}
     .svc-desc{font-size:0.9rem;line-height:1.8;color:var(--dim2);font-weight:300;}
 
-    /* ── WORK / PORTFOLIO ── */
-    #work{background:var(--bg);}
+    /* ── PRICING ── */
+    #pricing{background:var(--bg);}
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
+    .price-card{background:var(--glass);border:1px solid var(--border);padding:2.5rem;position:relative;overflow:hidden;transition:all 0.35s;display:flex;flex-direction:column;}
+    .price-card.featured{border-color:var(--c1);animation:pricingGlow 4s ease-in-out infinite;}
+    .price-card.featured::before{content:'// MOST POPULAR';position:absolute;top:0;left:0;right:0;background:var(--c1);color:var(--bg);font-family:'Share Tech Mono',monospace;font-size:0.55rem;letter-spacing:0.4em;text-align:center;padding:0.4rem;text-transform:uppercase;}
+    .price-card:hover{transform:translateY(-5px);border-color:rgba(0,245,255,0.4);box-shadow:0 0 50px rgba(0,245,255,0.08);}
+    .price-tag{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:0.4em;color:var(--c1);text-transform:uppercase;margin-bottom:1.2rem;margin-top:0.5rem;}
+    .price-card.featured .price-tag{margin-top:1.8rem;}
+    .price-name{font-family:'Orbitron',monospace;font-weight:900;font-size:1.2rem;letter-spacing:0.06em;margin-bottom:0.5rem;}
+    .price-amount{font-family:'Orbitron',monospace;font-weight:900;font-size:2.8rem;color:var(--c1);text-shadow:0 0 30px var(--c1d);line-height:1;margin-bottom:0.3rem;}
+    .price-period{font-family:'Share Tech Mono',monospace;font-size:0.62rem;letter-spacing:0.2em;color:var(--dim2);margin-bottom:1.5rem;}
+    .price-desc{font-size:0.9rem;line-height:1.75;color:var(--dim2);font-weight:300;margin-bottom:1.8rem;flex:1;}
+    .price-features{list-style:none;margin-bottom:2rem;display:flex;flex-direction:column;gap:0.6rem;}
+    .price-features li{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;color:var(--dim2);}
+    .price-features li::before{content:'→ ';color:var(--c1);}
+    .btn-price{font-family:'Share Tech Mono',monospace;font-size:0.68rem;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;padding:1rem;border:1px solid var(--c1);cursor:none;position:relative;overflow:hidden;transition:all 0.3s;display:block;text-align:center;color:var(--c1);}
+    .btn-price::before{content:'';position:absolute;inset:0;background:var(--c1);transform:translateX(-101%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);}
+    .btn-price:hover::before{transform:translateX(0);}
+    .btn-price span{position:relative;z-index:1;}
+    .btn-price:hover{color:var(--bg);box-shadow:0 0 40px var(--c1d);}
+    .price-card.featured .btn-price{background:var(--c1);color:var(--bg);}
+    .price-card.featured .btn-price::before{background:rgba(0,245,255,0.2);}
+    .price-card.featured .btn-price:hover{color:var(--bg);box-shadow:0 0 50px var(--c1d);}
+
+    #work{background:var(--bg2);}
     .work-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:3rem;}
     .work-card{background:var(--glass);border:1px solid var(--border);padding:2.5rem;position:relative;overflow:hidden;transition:all 0.35s;animation:cardFlicker 13s ease-in-out infinite;}
     .work-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,255,0.03) 0%,transparent 60%);opacity:0;transition:opacity 0.3s;}
@@ -143,23 +147,20 @@
     .work-desc{font-size:0.92rem;line-height:1.75;color:var(--dim2);font-weight:300;}
     .work-result{font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:var(--c1);margin-top:1.2rem;opacity:0.8;}
 
-    /* ── ABOUT ── */
     #about{background:var(--bg2);}
     .about-inner{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;margin-top:3rem;}
     .about-text p{font-size:1rem;line-height:1.85;color:var(--dim2);font-weight:300;margin-bottom:1.2rem;}
     .about-visual{position:relative;height:350px;}
-    .av-box{position:absolute;border:1px solid;padding:1.5rem;}
+    .av-box{position:absolute;border:1px solid;}
     .av-box1{top:0;left:0;right:60px;bottom:60px;border-color:var(--border);background:var(--glass);}
     .av-box2{top:40px;left:40px;right:0;bottom:0;border-color:rgba(0,245,255,0.12);background:var(--c1x);}
     .av-label{font-family:'Orbitron',monospace;font-weight:900;font-size:3.5rem;color:var(--c1);text-shadow:0 0 40px var(--c1d);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;animation:glitchTitle 7s ease-in-out 2s infinite;}
 
-    /* ── CTA ── */
     #cta{background:var(--bg);text-align:center;}
     .cta-wrap{max-width:680px;margin:3rem auto 0;}
     .cta-body{font-size:1.05rem;line-height:1.8;color:var(--dim2);margin-bottom:3rem;font-weight:300;}
     .cta-btns{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;}
 
-    /* ── FOOTER ── */
     footer{position:relative;z-index:2;padding:1.8rem 3rem;border-top:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;}
     .foot-logo{font-family:'Orbitron',monospace;font-size:0.8rem;font-weight:700;letter-spacing:0.16em;color:var(--c1);}
     .foot-logo span{color:var(--dim2);}
@@ -170,7 +171,7 @@
       nav{padding:1rem 1.5rem;} .nav-links{display:none;}
       .stats-grid{grid-template-columns:repeat(2,1fr);}
       .stat{border-right:none;border-bottom:1px solid var(--border);}
-      .services-grid,.work-grid,.about-inner{grid-template-columns:1fr;}
+      .services-grid,.work-grid,.about-inner,.pricing-grid{grid-template-columns:1fr;}
       footer{flex-direction:column;gap:1rem;text-align:center;}
     }
   </style>
@@ -185,40 +186,34 @@
 <div id="cur"></div>
 <div id="cur-ring"></div>
 
-<!-- NAV -->
 <nav>
   <div class="nav-logo">FLICK<span>.SYSTEMS</span></div>
   <ul class="nav-links">
     <li><a href="#services">Services</a></li>
+    <li><a href="#pricing">Pricing</a></li>
     <li><a href="#work">Work</a></li>
     <li><a href="#about">About</a></li>
-    <li><a href="#cta">Contact</a></li>
   </ul>
   <div style="display:flex;align-items:center;gap:0.5rem;">
-    <a href="mailto:Jasonflick333@gmail.com" class="nav-cta">Start Project</a>
+    <a href="#pricing" class="nav-cta">Start Project</a>
     <button class="sound-btn" id="soundBtn" onclick="toggleSound()">[ SFX ]</button>
   </div>
 </nav>
 
-<!-- HERO -->
 <section id="hero">
   <div class="hero-aura"></div>
   <div class="scan-sweep"></div>
   <p class="hero-eyebrow">// AI Agency · Production · Strategy</p>
   <div class="hero-title-wrap">
-    <h1 class="hero-title">
-      FLICK
-      <span class="hero-sys">.SYSTEMS</span>
-    </h1>
+    <h1 class="hero-title">FLICK<span class="hero-sys">.SYSTEMS</span></h1>
   </div>
   <p class="hero-sub">Transform your business with cutting-edge AI. Strategy, development, and automation that drives real results.</p>
   <div class="hero-ctas">
-    <a href="mailto:Jasonflick333@gmail.com" class="btn btn-cyan"><span>Start a Project</span></a>
+    <a href="#pricing" class="btn btn-cyan"><span>Start a Project</span></a>
     <a href="#work" class="btn btn-ghost"><span>View Work →</span></a>
   </div>
 </section>
 
-<!-- STATS -->
 <div id="stats">
   <div class="stats-grid">
     <div class="stat reveal"><div class="stat-num">150+</div><div class="stat-label">Projects Delivered</div></div>
@@ -230,74 +225,109 @@
 
 <div class="divider"></div>
 
-<!-- SERVICES -->
 <section id="services">
   <div class="container">
     <p class="section-label reveal">// What We Do</p>
     <h2 class="section-title reveal">Full-Spectrum <em>AI Services</em></h2>
     <p class="reveal" style="color:var(--dim2);max-width:580px;font-size:0.95rem;line-height:1.75;font-weight:300;">From strategy to deployment, we handle every aspect of your AI transformation.</p>
     <div class="services-grid">
-      <div class="svc reveal" style="--i:0"><div class="svc-icon">// 01</div><div class="svc-title">AI Strategy</div><p class="svc-desc">Custom AI roadmaps aligned with your business objectives and growth targets. No hype — just what actually works.</p></div>
-      <div class="svc reveal" style="--i:1"><div class="svc-icon">// 02</div><div class="svc-title">Custom Development</div><p class="svc-desc">Bespoke AI solutions built from the ground up — tailored to your market, your users, and your goals.</p></div>
-      <div class="svc reveal" style="--i:2"><div class="svc-icon">// 03</div><div class="svc-title">Automation</div><p class="svc-desc">Streamline operations with intelligent automation. Stop paying humans to do what machines do better.</p></div>
-      <div class="svc reveal" style="--i:3"><div class="svc-icon">// 04</div><div class="svc-title">Data Intelligence</div><p class="svc-desc">Transform raw data into actionable insights with advanced analytics and ML pipelines built to scale.</p></div>
-      <div class="svc reveal" style="--i:4"><div class="svc-icon">// 05</div><div class="svc-title">Neural Networks</div><p class="svc-desc">Deep learning models for complex pattern recognition — computer vision, NLP, and beyond.</p></div>
-      <div class="svc reveal" style="--i:5"><div class="svc-icon">// 06</div><div class="svc-title">MLOps</div><p class="svc-desc">End-to-end ML lifecycle management and deployment. Build once, run forever, scale infinitely.</p></div>
+      <div class="svc reveal"><div class="svc-icon">// 01</div><div class="svc-title">AI Strategy</div><p class="svc-desc">Custom AI roadmaps aligned with your business objectives. No hype — just what actually works.</p></div>
+      <div class="svc reveal"><div class="svc-icon">// 02</div><div class="svc-title">Custom Development</div><p class="svc-desc">Bespoke AI solutions built from the ground up — tailored to your market, your users, your goals.</p></div>
+      <div class="svc reveal"><div class="svc-icon">// 03</div><div class="svc-title">Automation</div><p class="svc-desc">Streamline operations with intelligent automation. Stop paying humans to do what machines do better.</p></div>
+      <div class="svc reveal"><div class="svc-icon">// 04</div><div class="svc-title">Data Intelligence</div><p class="svc-desc">Transform raw data into actionable insights with advanced analytics and ML pipelines built to scale.</p></div>
+      <div class="svc reveal"><div class="svc-icon">// 05</div><div class="svc-title">Neural Networks</div><p class="svc-desc">Deep learning models for complex pattern recognition — computer vision, NLP, and beyond.</p></div>
+      <div class="svc reveal"><div class="svc-icon">// 06</div><div class="svc-title">MLOps</div><p class="svc-desc">End-to-end ML lifecycle management and deployment. Build once, run forever, scale infinitely.</p></div>
     </div>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- WORK -->
+<section id="pricing">
+  <div class="container">
+    <p class="section-label reveal">// Investment</p>
+    <h2 class="section-title reveal">Simple <em>Pricing</em></h2>
+    <p class="reveal" style="color:var(--dim2);max-width:580px;font-size:0.95rem;line-height:1.75;font-weight:300;">No hidden fees. No long contracts. Just real work at fair prices.</p>
+    <div class="pricing-grid">
+
+      <div class="price-card reveal">
+        <div class="price-tag">// Entry Point</div>
+        <div class="price-name">Discovery Call</div>
+        <div class="price-amount">$150</div>
+        <div class="price-period">one-time · 60 minutes</div>
+        <p class="price-desc">A focused strategy session where we audit your operations, identify AI opportunities, and hand you a clear roadmap.</p>
+        <ul class="price-features">
+          <li>60-min deep dive session</li>
+          <li>Operations audit</li>
+          <li>AI opportunity mapping</li>
+          <li>Written roadmap delivered</li>
+        </ul>
+        <a href="https://buy.stripe.com/test_aFa7sLgEN8fQc5B1ry8ww00" class="btn-price" target="_blank"><span>Book Now →</span></a>
+      </div>
+
+      <div class="price-card featured reveal">
+        <div class="price-tag">// Most Popular</div>
+        <div class="price-name">AI Retainer</div>
+        <div class="price-amount">$1,500</div>
+        <div class="price-period">per month · ongoing</div>
+        <p class="price-desc">Your dedicated AI team. Continuous development, automation, strategy, and support — we become part of your operation.</p>
+        <ul class="price-features">
+          <li>Dedicated development hours</li>
+          <li>Ongoing automation builds</li>
+          <li>Monthly strategy sessions</li>
+          <li>Priority support & deployment</li>
+          <li>Full access to our stack</li>
+        </ul>
+        <a href="https://buy.stripe.com/test_00weVd4W5bs2b1x2vC8ww01" class="btn-price" target="_blank"><span>Start Retainer →</span></a>
+      </div>
+
+      <div class="price-card reveal">
+        <div class="price-tag">// Custom Build</div>
+        <div class="price-name">Project</div>
+        <div class="price-amount">$2,500</div>
+        <div class="price-period">starting price · scoped</div>
+        <p class="price-desc">A defined, scoped AI project — designed, built, tested, and deployed by Flick.Systems. Final price based on scope.</p>
+        <ul class="price-features">
+          <li>Full project scoping</li>
+          <li>Custom AI development</li>
+          <li>Testing & QA</li>
+          <li>Deployment & handoff</li>
+          <li>30-day post-launch support</li>
+        </ul>
+        <a href="https://buy.stripe.com/test_eVqbJ1fAJ67I3z50nu8ww02" class="btn-price" target="_blank"><span>Start Project →</span></a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
 <section id="work">
   <div class="container">
     <p class="section-label reveal">// Case Studies</p>
     <h2 class="section-title reveal">Selected <em>Work</em></h2>
     <div class="work-grid">
-      <div class="work-card reveal">
-        <div class="work-tag">// Automation · E-Commerce</div>
-        <div class="work-title">Marketplace Automation Engine</div>
-        <p class="work-desc">Built a full marketplace posting automation system that eliminated hours of manual daily work — cross-platform, real-time, zero downtime.</p>
-        <div class="work-result">↑ 340% time saved · 99.8% uptime</div>
-      </div>
-      <div class="work-card reveal">
-        <div class="work-tag">// AI Strategy · Consulting</div>
-        <div class="work-title">Enterprise AI Integration</div>
-        <p class="work-desc">End-to-end AI integration into a 50-person ops team — CRM automation, lead scoring, and predictive analytics pipeline deployed in 6 weeks.</p>
-        <div class="work-result">↑ 4.2x ROI · 6 week deployment</div>
-      </div>
-      <div class="work-card reveal">
-        <div class="work-tag">// Production · Brand</div>
-        <div class="work-title">AI-Powered Content Pipeline</div>
-        <p class="work-desc">Designed and deployed a content generation and distribution pipeline that produces brand-consistent output at 10x the speed of a human team.</p>
-        <div class="work-result">↑ 10x output · 60% cost reduction</div>
-      </div>
-      <div class="work-card reveal">
-        <div class="work-tag">// Neural Networks · Data</div>
-        <div class="work-title">Predictive Analytics Platform</div>
-        <p class="work-desc">Custom ML model for real-time demand forecasting — trained on 50M+ data points, deployed on edge infrastructure for sub-100ms inference.</p>
-        <div class="work-result">↑ 89% forecast accuracy · &lt;100ms</div>
-      </div>
+      <div class="work-card reveal"><div class="work-tag">// Automation · E-Commerce</div><div class="work-title">Marketplace Automation Engine</div><p class="work-desc">Built a full marketplace posting automation system that eliminated hours of manual daily work — cross-platform, real-time, zero downtime.</p><div class="work-result">↑ 340% time saved · 99.8% uptime</div></div>
+      <div class="work-card reveal"><div class="work-tag">// AI Strategy · Consulting</div><div class="work-title">Enterprise AI Integration</div><p class="work-desc">End-to-end AI integration into a 50-person ops team — CRM automation, lead scoring, and predictive analytics pipeline deployed in 6 weeks.</p><div class="work-result">↑ 4.2x ROI · 6 week deployment</div></div>
+      <div class="work-card reveal"><div class="work-tag">// Production · Brand</div><div class="work-title">AI-Powered Content Pipeline</div><p class="work-desc">Designed and deployed a content generation and distribution pipeline that produces brand-consistent output at 10x the speed of a human team.</p><div class="work-result">↑ 10x output · 60% cost reduction</div></div>
+      <div class="work-card reveal"><div class="work-tag">// Neural Networks · Data</div><div class="work-title">Predictive Analytics Platform</div><p class="work-desc">Custom ML model for real-time demand forecasting — trained on 50M+ data points, deployed on edge infrastructure for sub-100ms inference.</p><div class="work-result">↑ 89% forecast accuracy · &lt;100ms</div></div>
     </div>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- ABOUT -->
 <section id="about">
   <div class="container">
     <p class="section-label reveal">// About</p>
     <h2 class="section-title reveal">Built Different.<em> On Purpose.</em></h2>
     <div class="about-inner">
       <div class="about-text reveal-l">
-        <p>Flick.Systems exists because most AI agencies are selling hype. We're not interested in decks that impress and systems that don't ship. We build things that work — on deadline, on budget, and in the real world.</p>
+        <p>Flick.Systems exists because most AI agencies are selling hype. We're not interested in decks that impress and systems that don't ship. We build things that work — on deadline, on budget, in the real world.</p>
         <p>We specialize in the gap between "AI is possible" and "AI is running in your business." That gap is where most projects die. We close it.</p>
         <p>Whether you need a single automation or a complete AI transformation — we move fast, communicate clearly, and deliver what we promise.</p>
-        <div style="margin-top:2rem;">
-          <a href="mailto:Jasonflick333@gmail.com" class="btn btn-cyan"><span>Let's Talk</span></a>
-        </div>
+        <div style="margin-top:2rem;"><a href="#pricing" class="btn btn-cyan"><span>Let's Talk</span></a></div>
       </div>
       <div class="about-visual reveal">
         <div class="av-box av-box1"></div>
@@ -310,7 +340,6 @@
 
 <div class="divider"></div>
 
-<!-- CTA -->
 <section id="cta">
   <div class="container">
     <p class="section-label reveal">// Let's Build</p>
@@ -318,8 +347,8 @@
     <div class="cta-wrap">
       <p class="cta-body reveal">Join the companies using AI to redefine their industries. Your transformation starts with a conversation.</p>
       <div class="cta-btns reveal">
-        <a href="mailto:Jasonflick333@gmail.com" class="btn btn-cyan"><span>Start a Project</span></a>
-        <a href="mailto:Jasonflick333@gmail.com" class="btn btn-ghost"><span>Schedule a Call</span></a>
+        <a href="https://buy.stripe.com/test_aFa7sLgEN8fQc5B1ry8ww00" class="btn btn-cyan" target="_blank"><span>Book Discovery Call</span></a>
+        <a href="mailto:Jasonflick333@gmail.com" class="btn btn-ghost"><span>Send a Message</span></a>
       </div>
     </div>
   </div>
@@ -331,17 +360,15 @@
 </footer>
 
 <script>
-/* CURSOR */
 const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
 let mx=-100,my=-100,rx=-100,ry=-100;
 document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
 (function ac(){rx+=(mx-rx)*0.13;ry+=(my-ry)*0.13;cur.style.left=mx+'px';cur.style.top=my+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ac);})();
-document.querySelectorAll('a,button,.svc,.work-card').forEach(el=>{
+document.querySelectorAll('a,button,.svc,.work-card,.price-card').forEach(el=>{
   el.addEventListener('mouseenter',()=>{ring.style.width='46px';ring.style.height='46px';ring.style.opacity='0.8';ring.style.borderColor='var(--c2)';cur.style.transform='translate(-50%,-50%) scale(1.6)';});
   el.addEventListener('mouseleave',()=>{ring.style.width='26px';ring.style.height='26px';ring.style.opacity='0.4';ring.style.borderColor='var(--c1)';cur.style.transform='translate(-50%,-50%) scale(1)';});
 });
 
-/* PARTICLES */
 const pw=document.getElementById('particles');
 for(let i=0;i<28;i++){
   const p=document.createElement('div');p.className='particle';
@@ -350,11 +377,9 @@ for(let i=0;i<28;i++){
   pw.appendChild(p);
 }
 
-/* SCROLL REVEAL */
 const ro=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('on');ro.unobserve(x.target);}}),{threshold:0.1});
 document.querySelectorAll('.reveal,.reveal-l').forEach(el=>ro.observe(el));
 
-/* GLITCH LAYER */
 const gl=document.getElementById('gl');
 function spawnStrip(){
   const s=document.createElement('div');
@@ -377,7 +402,6 @@ function bigGlitch(){
   setTimeout(bigGlitch,5000+Math.random()*13000);
 }setTimeout(bigGlitch,3500);
 
-/* TITLE TWITCH */
 const ht=document.querySelector('.hero-title');
 function twitch(){
   if(!ht)return;
@@ -388,7 +412,6 @@ function twitch(){
   setTimeout(twitch,2000+Math.random()*6000);
 }twitch();
 
-/* AUDIO ENGINE */
 let actx=null,soundOn=false,ambNodes=[],schedT=null;
 function ctx(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx;}
 function tone(f,t,v,d,delay=0){if(!soundOn)return;try{const c=ctx(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;const ts=c.currentTime+delay;g.gain.setValueAtTime(0,ts);g.gain.linearRampToValueAtTime(v,ts+0.008);g.gain.exponentialRampToValueAtTime(0.0001,ts+d);o.start(ts);o.stop(ts+d+0.05);}catch(e){}}
@@ -398,7 +421,6 @@ function playClick(){tone(1040,'square',0.055,0.04);tone(520,'sawtooth',0.035,0.
 function playGlitchSound(){if(!soundOn)return;[65,97,130,87,108].forEach((f,i)=>tone(f,'sawtooth',0.018,0.055,i*0.011));nz(0.08,0.016,400);}
 function startAmbient(){if(!soundOn||!actx)return;try{
   const c=actx;
-  // Deeper, more alien drone for Flick
   const sub=c.createOscillator(),sg=c.createGain();sub.type='sine';sub.frequency.value=36.7;sg.gain.value=0.08;sub.connect(sg);sg.connect(c.destination);sub.start();
   const mid=c.createOscillator(),mg=c.createGain();mid.type='triangle';mid.frequency.value=73.4;mg.gain.value=0.038;mid.connect(mg);mg.connect(c.destination);mid.start();
   const hi=c.createOscillator(),hg=c.createGain();hi.type='sine';hi.frequency.value=110.2;hg.gain.value=0.02;hi.connect(hg);hg.connect(c.destination);hi.start();
@@ -409,7 +431,7 @@ function startAmbient(){if(!soundOn||!actx)return;try{
 }catch(e){}}
 function stopAmbient(){ambNodes.forEach(n=>{try{n.stop();}catch(e){}});ambNodes=[];if(schedT)clearTimeout(schedT);}
 function toggleSound(){soundOn=!soundOn;const btn=document.getElementById('soundBtn');if(soundOn){ctx();if(actx.state==='suspended')actx.resume();btn.textContent='[ SFX: ON ]';btn.classList.add('on');startAmbient();setTimeout(()=>playClick(),150);}else{btn.textContent='[ SFX ]';btn.classList.remove('on');stopAmbient();}}
-document.querySelectorAll('a,button,.svc,.work-card').forEach(el=>{el.addEventListener('mouseenter',playHover);el.addEventListener('click',playClick);});
+document.querySelectorAll('a,button,.svc,.work-card,.price-card').forEach(el=>{el.addEventListener('mouseenter',playHover);el.addEventListener('click',playClick);});
 </script>
 </body>
 </html>
