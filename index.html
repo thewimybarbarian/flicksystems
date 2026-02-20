@@ -204,6 +204,46 @@
       #chapters{display:none;}
       footer{flex-direction:column;gap:1rem;text-align:center;}
     }
+
+    /* ── MOBILE OVERRIDES: skip GSAP, show all, simple fade-in ── */
+    .is-mobile #cur,
+    .is-mobile #cur-ring,
+    .is-mobile #chapters,
+    .is-mobile .sound-btn { display: none !important; }
+
+    .is-mobile body { cursor: auto; }
+    .is-mobile a, .is-mobile button, .is-mobile .svc, .is-mobile .wcard, .is-mobile .pcard { cursor: pointer; }
+
+    /* All animated elements visible by default on mobile */
+    .is-mobile .eyebrow,
+    .is-mobile .big-title,
+    .is-mobile .body-text,
+    .is-mobile .section-label,
+    .is-mobile .hero-ctas,
+    .is-mobile .stat-row,
+    .is-mobile .svc-grid,
+    .is-mobile .work-grid,
+    .is-mobile .pricing-grid,
+    .is-mobile .cta-btns,
+    .is-mobile #s-visual,
+    .is-mobile #pr-grid,
+    .is-mobile #w-grid,
+    .is-mobile .svc,
+    .is-mobile .wcard,
+    .is-mobile .pcard { opacity: 1 !important; transform: none !important; }
+
+    /* Mobile fade-in via IntersectionObserver */
+    .is-mobile .mob-fade { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .is-mobile .mob-fade.visible { opacity: 1; transform: none; }
+
+    /* Mobile hero text sizing */
+    .is-mobile .hero-title { font-size: clamp(3.5rem, 18vw, 7rem); }
+    .is-mobile .solution-visual { height: 220px; }
+    .is-mobile .sv-label { font-size: 2.5rem; }
+    .is-mobile .panel { padding: 4rem 1.2rem; min-height: auto; }
+    .is-mobile .panel-hero { min-height: 100vh; }
+    .is-mobile .stat-row { gap: 2rem; flex-wrap: wrap; }
+    .is-mobile .pamount { font-size: 2rem; }
   </style>
 </head>
 <body>
@@ -384,9 +424,25 @@
 </footer>
 
 <script>
+/* ── MOBILE DETECTION ── */
+const isMobile = /Mobi|Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent) || window.innerWidth <= 768;
+if (isMobile) {
+  document.documentElement.classList.add('is-mobile');
+  // Add mob-fade class to key sections for lightweight fade-in
+  document.querySelectorAll('.panel .eyebrow, .panel .big-title, .panel .body-text, .panel .section-label, .panel .hero-ctas, .panel .stat-row, .panel .svc-grid, .panel .work-grid, .panel .pricing-grid, .panel .cta-btns, #s-visual').forEach(el => {
+    el.classList.add('mob-fade');
+  });
+  // IntersectionObserver for mobile fade-ins
+  const mobObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); mobObs.unobserve(e.target); } });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.mob-fade').forEach(el => mobObs.observe(el));
+}
+
 gsap.registerPlugin(ScrollTrigger);
 
-/* ── CURSOR ── */
+/* ── CURSOR (desktop only) ── */
+if (!isMobile) {
 const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
 let mx=-100,my=-100,rx=-100,ry=-100;
 document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
@@ -395,6 +451,7 @@ document.querySelectorAll('a,button,.svc,.wcard,.pcard').forEach(el=>{
   el.addEventListener('mouseenter',()=>{ring.style.width='46px';ring.style.height='46px';ring.style.opacity='0.8';ring.style.borderColor='var(--c2)';cur.style.transform='translate(-50%,-50%) scale(1.6)';});
   el.addEventListener('mouseleave',()=>{ring.style.width='26px';ring.style.height='26px';ring.style.opacity='0.4';ring.style.borderColor='var(--c1)';cur.style.transform='translate(-50%,-50%) scale(1)';});
 });
+} // end cursor desktop-only
 
 /* ── PARTICLES ── */
 const pw=document.getElementById('particles');
@@ -449,7 +506,8 @@ const panelObs=new IntersectionObserver(entries=>{
 },{threshold:0.4});
 panels.forEach(id=>panelObs.observe(document.getElementById(id)));
 
-/* ── GSAP SCROLL ANIMATIONS ── */
+/* ── GSAP SCROLL ANIMATIONS (desktop only) ── */
+if (!isMobile) {
 
 // HERO
 gsap.timeline()
@@ -536,6 +594,8 @@ animPanel('#cta',[
   ['#c-body',{opacity:1,y:0},0.3],
   ['#c-btns',{opacity:1,y:0},0.5],
 ]);
+
+} // end desktop-only GSAP
 
 // Hero title twitch
 const ht=document.querySelector('#h-title em');
