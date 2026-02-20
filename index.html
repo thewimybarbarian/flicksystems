@@ -208,8 +208,7 @@
     /* ── MOBILE OVERRIDES: skip GSAP, show all, simple fade-in ── */
     .is-mobile #cur,
     .is-mobile #cur-ring,
-    .is-mobile #chapters,
-    .is-mobile .sound-btn { display: none !important; }
+    .is-mobile #chapters { display: none !important; }
 
     .is-mobile body { cursor: auto; }
     .is-mobile a, .is-mobile button, .is-mobile .svc, .is-mobile .wcard, .is-mobile .pcard { cursor: pointer; }
@@ -279,7 +278,7 @@
   </ul>
   <div class="nav-right">
     <a href="#pricing" class="nav-cta">Start Project</a>
-    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">[ SFX ]</button>
+    <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">[ SFX: ON ]</button>
   </div>
 </nav>
 
@@ -627,7 +626,20 @@ function startAmbient(){if(!soundOn||!actx)return;try{
   function tick(){if(!soundOn)return;nz(0.055,0.005,150+Math.random()*70,1.4);tone(36+Math.random()*25,'sine',0.01,0.035);schedT=setTimeout(tick,2500+Math.random()*8000);}tick();
 }catch(e){}}
 function stopAmbient(){ambNodes.forEach(n=>{try{n.stop();}catch(e){}});ambNodes=[];if(schedT)clearTimeout(schedT);}
-function toggleSound(){soundOn=!soundOn;const btn=document.getElementById('soundBtn');if(soundOn){ctx();if(actx.state==='suspended')actx.resume();btn.textContent='[ SFX: ON ]';btn.classList.add('on');startAmbient();setTimeout(()=>playClick(),150);}else{btn.textContent='[ SFX ]';btn.classList.remove('on');stopAmbient();}}
+function toggleSound(){soundOn=!soundOn;const btn=document.getElementById('soundBtn');if(soundOn){ctx();if(actx.state==='suspended')actx.resume();btn.textContent='[ SFX: ON ]';btn.classList.add('on');startAmbient();setTimeout(()=>playClick(),150);}else{btn.textContent='[ SFX: OFF ]';btn.classList.remove('on');stopAmbient();}}
+
+// Auto-start sound on first user interaction (browsers block autoplay until then)
+function autoStartSound(){
+  if(!soundOn){toggleSound();}
+  document.removeEventListener('click',autoStartSound);
+  document.removeEventListener('touchstart',autoStartSound);
+  document.removeEventListener('scroll',autoStartSound);
+  document.removeEventListener('keydown',autoStartSound);
+}
+document.addEventListener('click',autoStartSound);
+document.addEventListener('touchstart',autoStartSound);
+document.addEventListener('scroll',autoStartSound);
+document.addEventListener('keydown',autoStartSound);
 document.querySelectorAll('a,button,.svc,.wcard,.pcard').forEach(el=>{el.addEventListener('mouseenter',playHover);el.addEventListener('click',playClick);});
 </script>
 </body>
