@@ -243,6 +243,20 @@
     .is-mobile .panel-hero { min-height: 100vh; }
     .is-mobile .stat-row { gap: 2rem; flex-wrap: wrap; }
     .is-mobile .pamount { font-size: 2rem; }
+
+    /* HERO VIDEO WINDOW */
+    .hero-vid-wrap{
+      position:absolute;right:4%;bottom:10%;z-index:10;
+      width:clamp(200px,20vw,340px);height:clamp(200px,20vw,340px);
+      border-radius:50%;border:3px solid var(--c1);
+      overflow:hidden;opacity:0;
+      box-shadow:0 0 40px var(--c1d),0 0 80px rgba(0,245,255,0.1),inset 0 0 30px rgba(0,245,255,0.05);
+    }
+    .hero-vid-wrap video{width:100%;height:100%;object-fit:cover;display:block;}
+    @media(max-width:768px){
+      .hero-vid-wrap{right:50%;transform:translateX(50%);bottom:auto;top:auto;position:relative;margin:2rem auto 0;width:clamp(150px,45vw,220px);height:clamp(150px,45vw,220px);}
+    }
+    .is-mobile .hero-vid-wrap{opacity:1!important;}
   </style>
 </head>
 <body>
@@ -297,6 +311,9 @@
   <div class="hero-ctas" id="h-ctas">
     <a href="#pricing" class="btn btn-cyan"><span>Start a Project</span></a>
     <a href="#work" class="btn btn-ghost"><span>View Work →</span></a>
+  </div>
+  <div class="hero-vid-wrap" id="h-vid">
+    <video autoplay loop muted playsinline><source src="hero-video.mp4" type="video/mp4"/></video>
   </div>
 </section>
 
@@ -513,7 +530,8 @@ gsap.timeline()
   .to('#h-eyebrow',{opacity:1,y:0,duration:0.8,ease:'power2.out'},0.3)
   .to('#h-title',{opacity:1,y:0,duration:1,ease:'power3.out'},0.5)
   .to('#h-sub',{opacity:1,y:0,duration:0.8,ease:'power2.out'},0.8)
-  .to('#h-ctas',{opacity:1,y:0,duration:0.8,ease:'power2.out'},1.0);
+  .to('#h-ctas',{opacity:1,y:0,duration:0.8,ease:'power2.out'},1.0)
+  .to('#h-vid',{opacity:1,duration:1.2,ease:'power2.out'},0.8);
 
 // Helper: animate panel on scroll
 function animPanel(trigger, items){
