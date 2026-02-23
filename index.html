@@ -257,7 +257,65 @@
       .hero-vid-wrap{position:relative;right:auto;bottom:auto;transform:none;margin:1.5rem auto 0;width:120px;height:120px;border-width:2px;}
     }
     .is-mobile .hero-vid-wrap{opacity:1!important;}
-  </style>
+
+    /* ═══ FLICK × R3DPILL FLOATING TAB ═══ */
+    #collab-tab {
+      position: fixed;
+      right: -168px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 900;
+      cursor: none;
+      transition: right 0.4s cubic-bezier(0.4,0,0.2,1);
+      animation: tabPulse 3s ease-in-out infinite;
+    }
+    #collab-tab:hover { right: -4px; }
+    .is-mobile #collab-tab { cursor: pointer; }
+    .collab-tab-inner {
+      background: linear-gradient(135deg, rgba(112,0,255,0.92), rgba(0,245,255,0.12));
+      border: 1px solid var(--c1);
+      border-right: none;
+      padding: 1.4rem 1rem 1.4rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.3rem;
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+    .collab-tab-inner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,245,255,0.04) 3px,rgba(0,245,255,0.04) 4px);
+      pointer-events: none;
+    }
+    .collab-x { font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--c1);letter-spacing:0.3em;opacity:0.5; }
+    .collab-text { font-family:'Orbitron',monospace;font-weight:900;font-size:0.75rem;letter-spacing:0.1em;color:var(--white);white-space:nowrap;text-shadow:0 0 20px var(--c1);animation:logoBlink 6s ease-in-out infinite; }
+    .collab-times { color: var(--c1); }
+    .collab-sub { font-family:'Share Tech Mono',monospace;font-size:0.42rem;letter-spacing:0.25em;color:var(--c1);opacity:0.7;white-space:nowrap; }
+    @keyframes tabPulse {
+      0%,100%{filter:drop-shadow(-4px 0 20px rgba(112,0,255,0.6));}
+      50%{filter:drop-shadow(-4px 0 30px rgba(0,245,255,0.9)) drop-shadow(-2px 0 60px rgba(112,0,255,0.4));}
+    }
+    #glitch-overlay { position:fixed;inset:0;z-index:9990;pointer-events:none;opacity:0;background:var(--bg); }
+    body.collab-mode { --c2:#ff0080;--c2d:rgba(255,0,128,0.5); }
+    body.collab-mode .nav-logo::after { content:' × R3DPILL';color:var(--c1);font-size:0.7em;opacity:0.8; }
+    body.collab-mode .foot-logo::after { content:' × R3DPILL';color:var(--c1);font-size:0.8em; }
+    body.collab-mode #collab-tab { animation:none;filter:drop-shadow(-4px 0 20px rgba(255,0,128,0.8)); }
+    body.collab-mode .collab-tab-inner { background:linear-gradient(135deg,rgba(255,0,128,0.3),rgba(0,245,255,0.2)); }
+    body.collab-mode .collab-sub { display:none; }
+    body.collab-mode .collab-sub-back { display:block!important; }
+    .collab-sub-back { display:none;font-family:'Share Tech Mono',monospace;font-size:0.42rem;letter-spacing:0.2em;color:var(--c1);opacity:0.7;white-space:nowrap; }
+    .pcard.equity { border-color:#ff0080;background:linear-gradient(135deg,rgba(255,0,128,0.07),rgba(112,0,255,0.04));grid-column:1 / -1; }
+    .pcard.equity::before { content:'// FULL PARTNERSHIP — EQUITY MODEL';background:linear-gradient(90deg,#ff0080,var(--c2)); }
+    .pcard.equity .pamount { color:#ff0080;text-shadow:0 0 30px rgba(255,0,128,0.5); }
+    .pcard.equity .pamount-sub { font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;color:rgba(255,0,128,0.7);margin-bottom:1rem; }
+    .pcard.equity .btn-p { border-color:#ff0080;color:#ff0080; }
+    .pcard.equity .btn-p::before { background:#ff0080; }
+    .pcard.equity .pfeatures li::before { color:#ff0080; }
+    body.collab-mode .pricing-grid { grid-template-columns:repeat(2,1fr); }
 </head>
 <body>
 <div class="scanlines"></div>
@@ -438,6 +496,17 @@
   <div class="foot-logo">FLICK<span>.SYSTEMS</span></div>
   <div class="foot-copy">© 2025 FLICK.SYSTEMS · ALL SYSTEMS OPERATIONAL</div>
 </footer>
+
+<!-- ═══ FLICK × R3DPILL FLOATING TAB ═══ -->
+<div id="collab-tab" onclick="toggleCollab()">
+  <div class="collab-tab-inner">
+    <span class="collab-x">// TEAM UP</span>
+    <span class="collab-text">FLICK <span class="collab-times">×</span> R3DPILL</span>
+    <span class="collab-sub">UNLOCK FULL POWER →</span>
+    <span class="collab-sub-back">← RETURN TO SOLO</span>
+  </div>
+</div>
+<div id="glitch-overlay"></div>
 
 <script>
 /* ── MOBILE DETECTION ── */
@@ -659,6 +728,62 @@ document.addEventListener('touchstart',autoStartSound);
 document.addEventListener('scroll',autoStartSound);
 document.addEventListener('keydown',autoStartSound);
 document.querySelectorAll('a,button,.svc,.wcard,.pcard').forEach(el=>{el.addEventListener('mouseenter',playHover);el.addEventListener('click',playClick);});
+
+/* ═══ FLICK × R3DPILL COLLAB TOGGLE ═══ */
+let collabMode = false;
+const soloContent = {
+  eyebrow:'// AI Agency · Production · Strategy',
+  titleHTML:'<em>FLICK</em><span class="hero-sys dim">.SYSTEMS</span>',
+  sub:'Transform your business with cutting-edge AI. Strategy, development, and automation that drives real results.',
+  pricingLabel:'// Investment',
+  pricingTitle:'Simple <em>Pricing</em>',
+  ctaTitle:'Ready to<br/><em>Transform?</em>',
+  ctaBody:'Your AI transformation starts with a conversation. We move fast, communicate clearly, and deliver what we promise.',
+  pricingHTML:`<div class="pcard"><div class="ptag">// Entry Point</div><div class="pname">Discovery Call</div><div class="pamount">$150</div><div class="pperiod">one-time · 60 minutes</div><p class="pdesc">A focused strategy session. We audit your operations, identify AI opportunities, and hand you a written roadmap.</p><ul class="pfeatures"><li>60-min deep dive session</li><li>Operations audit</li><li>AI opportunity mapping</li><li>Written roadmap delivered</li></ul><a href="https://buy.stripe.com/14A3cveukcImfqH0rdbo403" class="btn-p" target="_blank"><span>Book Now →</span></a></div><div class="pcard featured"><div class="ptag">// Most Popular</div><div class="pname">AI Retainer</div><div class="pamount">$1,500</div><div class="pperiod">per month · ongoing</div><p class="pdesc">Your dedicated AI team. Continuous development, automation, strategy, and support — we become part of your operation.</p><ul class="pfeatures"><li>Dedicated dev hours</li><li>Ongoing automation builds</li><li>Monthly strategy sessions</li><li>Priority support & deployment</li><li>Full access to our stack</li></ul><a href="https://buy.stripe.com/eVqfZh0Du6jY5Q7fm7bo404" class="btn-p" target="_blank"><span>Start Retainer →</span></a></div><div class="pcard"><div class="ptag">// Custom Build</div><div class="pname">Project</div><div class="pamount">$2,500</div><div class="pperiod">starting price · scoped</div><p class="pdesc">A defined, scoped AI project — designed, built, tested, and deployed. Final price based on scope.</p><ul class="pfeatures"><li>Full project scoping</li><li>Custom AI development</li><li>Testing & QA</li><li>Deployment & handoff</li><li>30-day post-launch support</li></ul><a href="https://buy.stripe.com/eVqeVdae4gYC1zR1vhbo405" class="btn-p" target="_blank"><span>Start Project →</span></a></div>`
+};
+const collabContent = {
+  eyebrow:'// FLICK.SYSTEMS × R3DPILL · Twice the Power · Twice the Knowledge · Priced for Serious Players',
+  titleHTML:'<em>FLICK</em> <span style="color:var(--c1);font-size:0.45em;vertical-align:middle;letter-spacing:0.1em;">×</span> <em style="animation:glitchT 5s ease-in-out infinite;">R3DPILL</em><span class="hero-sys dim">.COMBINED</span>',
+  sub:"Two elite AI operators. One unstoppable force. We don't just build AI — we become embedded partners with skin in the game. Twice the firepower. Twice the knowledge. Priced accordingly.",
+  pricingLabel:'// Combined Investment',
+  pricingTitle:'Twice the Power. <em>Twice the Price.</em>',
+  ctaTitle:'Ready to<br/><em>Partner Up?</em>',
+  ctaBody:'Two operators. One mission. Whether you need a retainer, a full build, or a true equity partnership — this is where serious AI transformation happens.',
+  pricingHTML:`<div class="pcard"><div class="ptag">// Dual Strategy Session</div><div class="pname">Combined Discovery</div><div class="pamount">$300</div><div class="pperiod">one-time · 90 minutes · both operators</div><p class="pdesc">Both Jason + Stephan in the room. Double the perspective, double the audit depth. Walk away with a battle-tested roadmap built by two minds who've done it.</p><ul class="pfeatures"><li>90-min dual operator session</li><li>Full AI + design + systems audit</li><li>Dual-lens opportunity mapping</li><li>Comprehensive written roadmap</li></ul><a href="mailto:Jasonflick333@gmail.com" class="btn-p"><span>Book Combined Session →</span></a></div><div class="pcard featured"><div class="ptag">// Maximum Firepower</div><div class="pname">Dual Operator Retainer</div><div class="pamount">$3,000</div><div class="pperiod">per month · both operators · ongoing</div><p class="pdesc">Full access to Jason (AI dev + UI/UX) and Stephan (AI systems + strategy). Two dedicated specialists embedded in your operation. This is what enterprise-grade AI looks like.</p><ul class="pfeatures"><li>Dual dedicated dev hours</li><li>AI dev + design + systems coverage</li><li>Bi-weekly dual strategy sessions</li><li>Priority deployment pipeline</li><li>Full access to combined stack</li><li>Cross-platform execution</li></ul><a href="mailto:Jasonflick333@gmail.com" class="btn-p"><span>Activate Full Team →</span></a></div><div class="pcard equity"><div class="ptag">// Partnership · Equity Model</div><div class="pname">Investment Kickoff</div><div class="pamount">$25,000+</div><div class="pamount-sub">// sign-on · equity stake negotiated · we become your partners</div><div class="pperiod">full build · deployment · ongoing ops · we have skin in the game</div><p class="pdesc">This isn't a vendor relationship — it's a partnership. We've closed at $8.5K with 50% equity. We're signing a $25K kickoff at 30% stake Monday. We don't just build — we grow with you. Our success is your success.</p><ul class="pfeatures"><li>Full company AI transformation</li><li>Equity stake negotiated (20–50%)</li><li>Both operators embedded long-term</li><li>Full product build + deployment</li><li>Ongoing ops + scaling support</li><li>Board-level AI strategy advisory</li><li>Revenue share structuring available</li></ul><a href="mailto:Jasonflick333@gmail.com" class="btn-p"><span>Start Partnership Conversation →</span></a></div>`
+};
+
+function runGlitchTransition(cb){
+  const overlay=document.getElementById('glitch-overlay');
+  playGlitchSound();
+  for(let i=0;i<14;i++){
+    setTimeout(()=>{
+      const s=document.createElement('div');
+      s.style.cssText=`position:fixed;top:${Math.random()*94}%;left:0;right:0;height:${Math.random()*7+1}px;background:${Math.random()>.5?'var(--c1)':'var(--c2)'};opacity:${0.4+Math.random()*0.6};z-index:9991;pointer-events:none;`;
+      document.body.appendChild(s);setTimeout(()=>s.remove(),110);
+    },i*30);
+  }
+  setTimeout(()=>{overlay.style.transition='none';overlay.style.background='var(--c1)';overlay.style.opacity='0.12';},200);
+  setTimeout(()=>{overlay.style.background='var(--bg)';overlay.style.opacity='1';},300);
+  setTimeout(()=>{cb();overlay.style.transition='opacity 0.35s';overlay.style.opacity='0';setTimeout(()=>playGlitchSound(),80);},440);
+}
+
+function toggleCollab(){
+  playClick();
+  runGlitchTransition(()=>{
+    collabMode=!collabMode;
+    const c=collabMode?collabContent:soloContent;
+    document.body.classList.toggle('collab-mode',collabMode);
+    document.getElementById('h-eyebrow').textContent=c.eyebrow;
+    document.getElementById('h-title').innerHTML=c.titleHTML;
+    document.getElementById('h-sub').textContent=c.sub;
+    document.getElementById('pr-label').textContent=c.pricingLabel;
+    document.getElementById('pr-title').innerHTML=c.pricingTitle;
+    document.getElementById('pr-grid').innerHTML=c.pricingHTML;
+    document.getElementById('c-title').innerHTML=c.ctaTitle;
+    document.getElementById('c-body').textContent=c.ctaBody;
+    document.querySelector('.sv-label').textContent=collabMode?'FLK×R3D':'FLK';
+  });
+}
 </script>
 </body>
 </html>
