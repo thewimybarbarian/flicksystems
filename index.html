@@ -300,21 +300,28 @@
       50%{filter:drop-shadow(-4px 0 30px rgba(0,245,255,0.9)) drop-shadow(-2px 0 60px rgba(112,0,255,0.4));}
     }
     #glitch-overlay { position:fixed;inset:0;z-index:9990;pointer-events:none;opacity:0;background:var(--bg); }
-    body.collab-mode { --c2:#ff0080;--c2d:rgba(255,0,128,0.5); }
-    body.collab-mode .nav-logo::after { content:' × R3DPILL';color:var(--c1);font-size:0.7em;opacity:0.8; }
-    body.collab-mode .foot-logo::after { content:' × R3DPILL';color:var(--c1);font-size:0.8em; }
-    body.collab-mode #collab-tab { animation:none;filter:drop-shadow(-4px 0 20px rgba(255,0,128,0.8)); }
-    body.collab-mode .collab-tab-inner { background:linear-gradient(135deg,rgba(255,0,128,0.3),rgba(0,245,255,0.2)); }
+    body.collab-mode { --c2:#ff2200;--c2d:rgba(255,34,0,0.5); }
+    body.collab-mode .nav-logo::after { content:' × R3DPILL';color:#ff2200;font-size:0.7em;opacity:0.9; }
+    body.collab-mode .foot-logo::after { content:' × R3DPILL';color:#ff2200;font-size:0.8em; }
+    body.collab-mode #collab-tab { animation:none;filter:drop-shadow(-4px 0 20px rgba(255,34,0,0.8)); }
+    body.collab-mode .collab-tab-inner { background:linear-gradient(135deg, rgba(255,34,0,0.5), rgba(0,245,255,0.25));border-color:var(--c1); }
+    body.collab-mode .collab-text { text-shadow: -2px 0 var(--c1), 2px 0 #ff2200; }
+    body.collab-mode .big-title em { color:var(--c1); }
+    body.collab-mode .aura { background:radial-gradient(circle, rgba(255,34,0,0.06) 0%, rgba(0,245,255,0.04) 50%, transparent 70%) !important; }
+    body.collab-mode .sweep { background:linear-gradient(90deg,transparent,#ff2200,var(--c1),transparent); }
+    body.collab-mode .section-label { color:var(--c1); }
+    body.collab-mode .grid-bg { background-image:linear-gradient(rgba(255,34,0,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.022) 1px,transparent 1px); }
+    body.collab-mode #progress { background:linear-gradient(90deg,#ff2200,var(--c1)); }
     body.collab-mode .collab-sub { display:none; }
     body.collab-mode .collab-sub-back { display:block!important; }
     .collab-sub-back { display:none;font-family:'Share Tech Mono',monospace;font-size:0.42rem;letter-spacing:0.2em;color:var(--c1);opacity:0.7;white-space:nowrap; }
-    .pcard.equity { border-color:#ff0080;background:linear-gradient(135deg,rgba(255,0,128,0.07),rgba(112,0,255,0.04));grid-column:1 / -1; }
-    .pcard.equity::before { content:'// FULL PARTNERSHIP — EQUITY MODEL';background:linear-gradient(90deg,#ff0080,var(--c2)); }
-    .pcard.equity .pamount { color:#ff0080;text-shadow:0 0 30px rgba(255,0,128,0.5); }
+    .pcard.equity { border-color:#ff2200;background:linear-gradient(135deg,rgba(255,0,128,0.07),rgba(112,0,255,0.04));grid-column:1 / -1; }
+    .pcard.equity::before { content:'// FULL PARTNERSHIP — EQUITY MODEL';background:linear-gradient(90deg,#ff2200,var(--c2)); }
+    .pcard.equity .pamount { color:#ff2200;text-shadow:0 0 30px rgba(255,0,128,0.5); }
     .pcard.equity .pamount-sub { font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;color:rgba(255,0,128,0.7);margin-bottom:1rem; }
-    .pcard.equity .btn-p { border-color:#ff0080;color:#ff0080; }
-    .pcard.equity .btn-p::before { background:#ff0080; }
-    .pcard.equity .pfeatures li::before { color:#ff0080; }
+    .pcard.equity .btn-p { border-color:#ff2200;color:#ff2200; }
+    .pcard.equity .btn-p::before { background:#ff2200; }
+    .pcard.equity .pfeatures li::before { color:#ff2200; }
     body.collab-mode .pricing-grid { grid-template-columns:repeat(2,1fr); }
   </style>
 </head>
