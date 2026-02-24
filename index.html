@@ -257,6 +257,14 @@
     #progress { background: linear-gradient(90deg, var(--c3), var(--c1), var(--c2)); background-size: 200% 100%; animation: progressShimmer 3s linear infinite; }
     @keyframes progressShimmer { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
 
+    /* ── BINARY RAIN ── */
+    #binary-rain { position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;opacity:0.18;mask-image:linear-gradient(to left, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, transparent 75%); }
+    .bin-col { position:absolute;top:-20px;display:flex;flex-direction:column;gap:2px;font-family:'Share Tech Mono',monospace;font-size:0.55rem;line-height:1.4;color:var(--c1); }
+    .bin-cell { opacity:0.35;transition:opacity 0.1s,color 0.1s; }
+    .bin-cell.hot { opacity:1;color:#fff;text-shadow:0 0 8px var(--c1); }
+    body.collab-mode #binary-rain .bin-col:nth-child(odd) { color:#ff2200; }
+    body.collab-mode #binary-rain .bin-col:nth-child(odd) .bin-cell.hot { text-shadow:0 0 8px #ff2200; }
+
     .is-mobile #cur,
     .is-mobile #cur-ring,
     .is-mobile #chapters { display: none !important; }
@@ -437,6 +445,7 @@
 <section class="panel panel-hero" id="hero">
   <div class="aura"></div>
   <div class="sweep"></div>
+  <div id="binary-rain"></div>
   <p class="eyebrow" id="h-eyebrow">// AI Agency · Production · Strategy</p>
   <div style="text-align:center;">
     <h1 class="big-title hero-title" id="h-title">
@@ -628,6 +637,50 @@ for(let i=0;i<60;i++){
   p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}vw;background:${color};animation-duration:${7+Math.random()*16}s;animation-delay:${Math.random()*16}s;box-shadow:0 0 ${sz*4}px ${isRed?'rgba(255,34,0,0.9)':'rgba(0,245,255,0.9)'};`;
   pw.appendChild(p);
 }
+
+/* ── BINARY RAIN ── */
+(function(){
+  const rain = document.getElementById('binary-rain');
+  if(!rain) return;
+  const cols = 18;
+  const rows = 38;
+  const colEls = [];
+  for(let c = 0; c < cols; c++){
+    const col = document.createElement('div');
+    col.className = 'bin-col';
+    const x = 50 + c * 2.8;
+    col.style.left = x + '%';
+    const cells = [];
+    for(let r = 0; r < rows; r++){
+      const cell = document.createElement('span');
+      cell.className = 'bin-cell';
+      cell.textContent = Math.random() > 0.5 ? '1' : '0';
+      col.appendChild(cell);
+      cells.push(cell);
+    }
+    rain.appendChild(col);
+    colEls.push(cells);
+  }
+  // Randomly flip bits and highlight cells
+  setInterval(() => {
+    const c = Math.floor(Math.random() * cols);
+    const r = Math.floor(Math.random() * rows);
+    const cell = colEls[c][r];
+    cell.textContent = Math.random() > 0.5 ? '1' : '0';
+    cell.classList.add('hot');
+    setTimeout(() => cell.classList.remove('hot'), 120 + Math.random() * 200);
+  }, 40);
+  // Cascade effect — light up a column briefly
+  setInterval(() => {
+    const c = Math.floor(Math.random() * cols);
+    colEls[c].forEach((cell, i) => {
+      setTimeout(() => {
+        cell.classList.add('hot');
+        setTimeout(() => cell.classList.remove('hot'), 80);
+      }, i * 18);
+    });
+  }, 800 + Math.random() * 1200);
+})();
 
 /* ── GLITCH LAYER ── */
 const gl=document.getElementById('gl');
