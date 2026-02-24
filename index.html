@@ -78,14 +78,14 @@
       padding:6rem 4rem;overflow:hidden;z-index:2;
     }
 
-    /* Panel backgrounds */
-    .panel-hero{background:var(--bg);}
-    .panel-problem{background:var(--bg2);}
-    .panel-solution{background:var(--bg);}
-    .panel-services{background:var(--bg2);}
-    .panel-work{background:var(--bg);}
-    .panel-pricing{background:var(--bg2);}
-    .panel-cta{background:var(--bg);}
+    /* Panel backgrounds — semi-transparent so grid/particles show through */
+    .panel-hero{background:rgba(2,4,8,0.75);}
+    .panel-problem{background:rgba(5,8,16,0.8);}
+    .panel-solution{background:rgba(2,4,8,0.75);}
+    .panel-services{background:rgba(5,8,16,0.8);}
+    .panel-work{background:rgba(2,4,8,0.75);}
+    .panel-pricing{background:rgba(5,8,16,0.8);}
+    .panel-cta{background:rgba(2,4,8,0.75);}
 
     /* Scan sweep per panel */
     .sweep{position:absolute;left:0;right:0;height:1px;pointer-events:none;z-index:5;background:linear-gradient(90deg,transparent,var(--c2),var(--c1),transparent);box-shadow:0 0 20px var(--c1),0 0 50px var(--c2d);animation:scanL 10s ease-in-out infinite;}
