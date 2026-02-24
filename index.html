@@ -397,7 +397,7 @@
     <a href="#work" class="btn btn-ghost"><span>View Work →</span></a>
   </div>
   <div class="hero-vid-wrap" id="h-vid">
-    <video autoplay loop muted playsinline><source src="hero-video.mp4" type="video/mp4"/></video>
+    <video id="hero-vid-el" autoplay loop muted playsinline><source src="https://pub-445264c4148a4dea9e6a338423465374.r2.dev/gemini_generated_video_25c49790.mp4" type="video/mp4"/></video>
   </div>
 </section>
 
@@ -808,6 +808,17 @@ function toggleCollab(){
     document.getElementById('c-title').innerHTML=c.ctaTitle;
     document.getElementById('c-body').textContent=c.ctaBody;
     document.querySelector('.sv-label').textContent=collabMode?'FLK×R3D':'FLK';
+
+    // Swap hero video
+    const vid = document.getElementById('hero-vid-el');
+    if(vid) {
+      const newSrc = collabMode
+        ? 'https://pub-445264c4148a4dea9e6a338423465374.r2.dev/gemini_generated_video_11868a03.mp4'
+        : 'https://pub-445264c4148a4dea9e6a338423465374.r2.dev/gemini_generated_video_25c49790.mp4';
+      vid.querySelector('source').src = newSrc;
+      vid.load();
+      vid.play();
+    }
   });
 }
 </script>
