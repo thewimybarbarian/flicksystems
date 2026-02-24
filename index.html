@@ -13,6 +13,7 @@
     :root{
       --c1:#00f5ff;--c1d:rgba(0,245,255,0.4);--c1x:rgba(0,245,255,0.07);
       --c2:#7000ff;--c2d:rgba(112,0,255,0.5);
+      --c3:#f0c030;--c3d:rgba(240,192,48,0.4);
       --white:#e8f0f8;--dim:#2a3a4a;--dim2:#4a6070;
       --bg:#020408;--bg2:#050810;
       --glass:rgba(255,255,255,0.02);--border:rgba(0,245,255,0.08);
@@ -217,7 +218,45 @@
       #collab-tab{right:-110px;}
     }
 
-    /* ── MOBILE OVERRIDES: skip GSAP, show all, simple fade-in ── */
+    /* ── SUBTLE GRADIENT ANIMATIONS ── */
+    @keyframes borderShimmer {
+      0%,100%{border-color:rgba(0,245,255,0.08);}
+      50%{border-color:rgba(0,245,255,0.22);}
+    }
+    @keyframes labelShimmer {
+      0%,100%{color:var(--c3);text-shadow:0 0 8px var(--c3d);}
+      50%{color:var(--c1);text-shadow:0 0 12px var(--c1d);}
+    }
+    @keyframes auraShift {
+      0%,100%{background:radial-gradient(circle,rgba(0,245,255,0.06) 0%,rgba(112,0,255,0.03) 40%,transparent 70%);}
+      33%{background:radial-gradient(circle,rgba(240,192,48,0.05) 0%,rgba(0,245,255,0.03) 40%,transparent 70%);}
+      66%{background:radial-gradient(circle,rgba(112,0,255,0.06) 0%,rgba(0,245,255,0.02) 40%,transparent 70%);}
+    }
+    @keyframes statGlow {
+      0%,100%{text-shadow:0 0 20px var(--c3d),0 0 40px rgba(240,192,48,0.15);}
+      50%{text-shadow:0 0 30px var(--c1d),0 0 60px rgba(0,245,255,0.2);}
+    }
+    @keyframes cardBorderPulse {
+      0%,100%{box-shadow:0 0 0 rgba(0,245,255,0);}
+      50%{box-shadow:0 0 20px rgba(0,245,255,0.04),inset 0 0 20px rgba(0,245,255,0.02);}
+    }
+
+    /* Solo Flick — yellow accents */
+    .eyebrow { color: var(--c3) !important; text-shadow: 0 0 10px var(--c3d); animation: labelShimmer 6s ease-in-out infinite !important; opacity:0; }
+    .section-label { animation: labelShimmer 7s ease-in-out 1s infinite; }
+    .stat-n { color: var(--c3) !important; text-shadow: 0 0 30px var(--c3d); animation: statGlow 4s ease-in-out infinite; }
+    .svc-icon { color: var(--c3) !important; }
+    .wresult { color: var(--c3) !important; }
+    .pfeatures li::before { color: var(--c3) !important; }
+    .aura { animation: auraP 8s ease-in-out infinite, auraShift 12s ease-in-out infinite; }
+    .svc { animation: cardBorderPulse 5s ease-in-out infinite; }
+    .wcard { animation: cardBorderPulse 6s ease-in-out 0.5s infinite; }
+    .pcard:not(.featured):not(.equity) { animation: cardBorderPulse 7s ease-in-out 1s infinite; }
+
+    /* Gradient shimmer on progress bar */
+    #progress { background: linear-gradient(90deg, var(--c3), var(--c1), var(--c2)); background-size: 200% 100%; animation: progressShimmer 3s linear infinite; }
+    @keyframes progressShimmer { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
+
     .is-mobile #cur,
     .is-mobile #cur-ring,
     .is-mobile #chapters { display: none !important; }
@@ -329,6 +368,20 @@
     body.collab-mode .panel-hero { background:radial-gradient(ellipse at 60% 40%, rgba(255,34,0,0.05) 0%, transparent 60%), var(--bg); }
     body.collab-mode .section-label { color:var(--c1); }
     body.collab-mode .grid-bg { background-image:linear-gradient(rgba(255,34,0,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.055) 1px,transparent 1px); }
+    /* Collab mode: red for labels/numbers, cyan for title highlights */
+    body.collab-mode .eyebrow { color:#ff2200 !important; text-shadow:0 0 10px rgba(255,34,0,0.5) !important; animation:none !important; opacity:1; }
+    body.collab-mode .section-label { color:#ff2200 !important; text-shadow:0 0 10px rgba(255,34,0,0.4) !important; animation:none !important; }
+    body.collab-mode .stat-n { color:#ff2200 !important; text-shadow:0 0 30px rgba(255,34,0,0.6) !important; animation:none !important; }
+    body.collab-mode .svc-icon { color:#ff2200 !important; }
+    body.collab-mode .wresult { color:#ff2200 !important; }
+    body.collab-mode .pfeatures li::before { color:var(--c1) !important; }
+    body.collab-mode .big-title em { color:var(--c1); }
+    body.collab-mode .wtag { color:#ff2200 !important; }
+    body.collab-mode .ptag { color:#ff2200 !important; }
+    body.collab-mode .pamount { color:#ff2200 !important; text-shadow:0 0 30px rgba(255,34,0,0.5) !important; }
+    body.collab-mode .svc:hover::before { background:linear-gradient(90deg,#ff2200,var(--c1)); }
+    body.collab-mode #progress { background:linear-gradient(90deg,#ff2200,var(--c1)); background-size:unset; animation:none; }
+    body.collab-mode .aura { animation:auraP 8s ease-in-out infinite !important; }
     body.collab-mode #progress { background:linear-gradient(90deg,#ff2200,var(--c1)); }
     body.collab-mode .collab-sub { display:none; }
     body.collab-mode .collab-sub-back { display:block!important; }
