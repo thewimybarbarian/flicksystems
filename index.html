@@ -199,10 +199,22 @@
 
     @media(max-width:768px){
       nav{padding:1rem 1.5rem;} .nav-links{display:none;}
-      .panel{padding:5rem 1.5rem;}
+      .panel{padding:4rem 1.2rem; min-height:auto;}
+      .panel-hero{min-height:100vh;}
       .panel-solution .inner,.work-grid,.pricing-grid,.svc-grid{grid-template-columns:1fr;}
       #chapters{display:none;}
       footer{flex-direction:column;gap:1rem;text-align:center;}
+      .hero-title{font-size:clamp(3.2rem,16vw,6rem)!important;}
+      .stat-row{gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+      .stat-n{font-size:clamp(2rem,10vw,3.5rem);}
+      .pamount{font-size:2rem;}
+      .pcard.featured::before{font-size:0.45rem;}
+      .btn{padding:0.8rem 1.6rem;font-size:0.6rem;}
+      .hero-ctas{gap:0.8rem;}
+      .solution-visual{height:200px;}
+      .sv-label{font-size:2rem;}
+      body.collab-mode .pricing-grid{grid-template-columns:1fr;}
+      #collab-tab{right:-110px;}
     }
 
     /* ── MOBILE OVERRIDES: skip GSAP, show all, simple fade-in ── */
@@ -295,7 +307,12 @@
     .collab-text { font-family:'Orbitron',monospace;font-weight:900;font-size:0.75rem;letter-spacing:0.1em;color:var(--white);white-space:nowrap;text-shadow:0 0 20px var(--c1);animation:logoBlink 6s ease-in-out infinite; }
     .collab-times { color: var(--c1); }
     .collab-sub { font-family:'Share Tech Mono',monospace;font-size:0.42rem;letter-spacing:0.25em;color:var(--c1);opacity:0.7;white-space:nowrap; }
-    @keyframes tabPulse {
+    @keyframes glitchRed{
+      0%,88%,100%{text-shadow:0 0 50px rgba(255,34,0,0.8),0 0 100px rgba(255,34,0,0.3);transform:translate(0,0) skewX(0deg);clip-path:none;}
+      89%{text-shadow:6px 0 0 var(--c1),-6px 0 0 #ff2200;transform:translate(-5px,1px) skewX(-2deg);clip-path:polygon(0 18%,100% 18%,100% 42%,0 42%);}
+      89.5%{text-shadow:-8px 0 0 var(--c1),8px 0 0 #ff2200;transform:translate(5px,-1px) skewX(3deg);clip-path:polygon(0 55%,100% 55%,100% 78%,0 78%);}
+      90%{text-shadow:0 0 50px rgba(255,34,0,0.7);transform:translate(0,0) skewX(0deg);clip-path:none;}
+    }
       0%,100%{filter:drop-shadow(-4px 0 20px rgba(112,0,255,0.6));}
       50%{filter:drop-shadow(-4px 0 30px rgba(0,245,255,0.9)) drop-shadow(-2px 0 60px rgba(112,0,255,0.4));}
     }
@@ -307,8 +324,9 @@
     body.collab-mode .collab-tab-inner { background:linear-gradient(135deg, rgba(255,34,0,0.5), rgba(0,245,255,0.25));border-color:var(--c1); }
     body.collab-mode .collab-text { text-shadow: -2px 0 var(--c1), 2px 0 #ff2200; }
     body.collab-mode .big-title em { color:var(--c1); }
-    body.collab-mode .aura { background:radial-gradient(circle, rgba(255,34,0,0.06) 0%, rgba(0,245,255,0.04) 50%, transparent 70%) !important; }
-    body.collab-mode .sweep { background:linear-gradient(90deg,transparent,#ff2200,var(--c1),transparent); }
+    body.collab-mode .aura { background:radial-gradient(circle, rgba(255,34,0,0.07) 0%, rgba(0,245,255,0.05) 45%, transparent 70%) !important; }
+    body.collab-mode .sweep { background:linear-gradient(90deg,transparent,var(--c1),#ff2200,transparent);box-shadow:0 0 20px var(--c1),0 0 40px rgba(255,34,0,0.5); }
+    body.collab-mode .panel-hero { background:radial-gradient(ellipse at 60% 40%, rgba(255,34,0,0.05) 0%, transparent 60%), var(--bg); }
     body.collab-mode .section-label { color:var(--c1); }
     body.collab-mode .grid-bg { background-image:linear-gradient(rgba(255,34,0,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.022) 1px,transparent 1px); }
     body.collab-mode #progress { background:linear-gradient(90deg,#ff2200,var(--c1)); }
@@ -751,7 +769,7 @@ const soloContent = {
 };
 const collabContent = {
   eyebrow:'// FLICK.SYSTEMS × R3DPILL · Twice the Power · Twice the Knowledge · Priced for Serious Players',
-  titleHTML:'<em>FLICK</em> <span style="color:var(--c1);font-size:0.45em;vertical-align:middle;letter-spacing:0.1em;">×</span> <em style="animation:glitchT 5s ease-in-out infinite;">R3DPILL</em><span class="hero-sys dim">.COMBINED</span>',
+  titleHTML:'<em>FLICK</em> <span style="color:var(--c1);font-size:0.45em;vertical-align:middle;letter-spacing:0.1em;">×</span> <em style="color:#ff2200;text-shadow:0 0 40px rgba(255,34,0,0.7);animation:glitchRed 5.5s ease-in-out infinite;">R3DPILL</em><span class="hero-sys dim">.COMBINED</span>',
   sub:"Two elite AI operators. One unstoppable force. We don't just build AI — we become embedded partners with skin in the game. Twice the firepower. Twice the knowledge. Priced accordingly.",
   pricingLabel:'// Combined Investment',
   pricingTitle:'Twice the Power. <em>Twice the Price.</em>',
