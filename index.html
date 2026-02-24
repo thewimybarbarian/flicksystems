@@ -31,7 +31,7 @@
     .vhs{position:fixed;inset:0;z-index:998;pointer-events:none;animation:vhsF 0.13s steps(1) infinite;}
     @keyframes vhsF{0%{opacity:.04}20%{opacity:.01}40%{opacity:.06}60%{opacity:.02}80%{opacity:.05}100%{opacity:.03}}
     .noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");}
-    .grid-bg{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,245,255,0.055) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.055) 1px,transparent 1px);background-size:60px 60px;animation:gridM 22s linear infinite;}
+    .grid-bg{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,245,255,0.1) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.1) 1px,transparent 1px);background-size:60px 60px;animation:gridM 22s linear infinite;}
     @keyframes gridM{0%{transform:translateY(0)}100%{transform:translateY(60px)}}
     #particles{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
     #gl{position:fixed;inset:0;z-index:850;pointer-events:none;}
@@ -620,12 +620,12 @@ document.querySelectorAll('a,button,.svc,.wcard,.pcard').forEach(el=>{
 /* ── PARTICLES ── */
 const pw=document.getElementById('particles');
 const particleColors = ['var(--c1)','var(--c1)','var(--c1)','#ff2200','#ff2200','rgba(0,245,255,0.6)','rgba(255,34,0,0.6)'];
-for(let i=0;i<55;i++){
+for(let i=0;i<60;i++){
   const p=document.createElement('div');p.className='particle';
-  const sz = Math.random() > 0.8 ? 4 : Math.random() > 0.5 ? 3 : 2;
+  const sz = Math.random() > 0.7 ? 5 : Math.random() > 0.5 ? 4 : 3;
   const color = particleColors[Math.floor(Math.random()*particleColors.length)];
   const isRed = color.includes('255,34') || color.includes('ff2200');
-  p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}vw;background:${color};animation-duration:${8+Math.random()*20}s;animation-delay:${Math.random()*20}s;box-shadow:0 0 ${sz*3}px ${isRed?'rgba(255,34,0,0.8)':'rgba(0,245,255,0.8)'};`;
+  p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}vw;background:${color};animation-duration:${7+Math.random()*16}s;animation-delay:${Math.random()*16}s;box-shadow:0 0 ${sz*4}px ${isRed?'rgba(255,34,0,0.9)':'rgba(0,245,255,0.9)'};`;
   pw.appendChild(p);
 }
 
