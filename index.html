@@ -536,6 +536,7 @@ footer a:hover{text-decoration:underline}
 
   /* ---------------- pointer: repel and scatter ---------------- */
   var ptr = { x: -1e5, y: -1e5, on: false };
+  var LENS = 170, LENS_TOUCH = 115, lens = 0; // cursor circle radius in px (desktop, touch)
   hero.addEventListener('pointermove', function (e) {
     var r = hero.getBoundingClientRect(); ptr.x = e.clientX - r.left; ptr.y = e.clientY - r.top; ptr.on = true;
   }, { passive: true });
@@ -631,16 +632,24 @@ footer a:hover{text-decoration:underline}
       else if (src.type === 'video') updateVideo(src);
     }
     var WIG = 1.5; // wiggle radius in px: raise for livelier dots, lower for calmer
-    var R = coarse ? 80 : 110, R2 = R * R, useP = ptr.on && !reduce;
+    // Cursor lens: a clean circular hole that opens and closes smoothly.
+    lens += ((ptr.on && !reduce ? 1 : 0) - lens) * 0.14;
+    var R = (coarse ? LENS_TOUCH : LENS) * lens, R2 = R * R, useP = lens > 0.01;
     for (var i = 0, o = 0; i < N; i++, o += 6) {
       var k = 0.055, w = now - wake[i];
       if (w < 0) k = 0; else if (w < 220) k *= w / 220;
       var gx = tx[i], gy = ty[i];
-      var ax = (gx - px[i]) * k, ay = (gy - py[i]) * k;
       if (useP) {
-        var dx = px[i] - ptr.x, dy = py[i] - ptr.y, d2 = dx * dx + dy * dy;
-        if (d2 < R2) { var d = Math.sqrt(d2) + 0.001, f = (1 - d / R) * 2.4; ax += dx / d * f; ay += dy / d * f; }
+        // Any dot whose home falls inside the circle is moved out to the rim, so the
+        // hole stays perfectly round; dots near the rim pile up into a bright edge.
+        var dx = gx - ptr.x, dy = gy - ptr.y, d2 = dx * dx + dy * dy;
+        if (d2 < R2) {
+          var d = Math.sqrt(d2) + 0.001, nd = R * (0.9 + 0.1 * d / R);
+          gx = ptr.x + dx / d * nd; gy = ptr.y + dy / d * nd;
+          if (k > 0) k = 0.24; // follow the cursor quickly so the circle keeps its shape
+        }
       }
+      var ax = (gx - px[i]) * k, ay = (gy - py[i]) * k;
       var damp = k === 0 ? 0.93 : 0.8;
       vx[i] = (vx[i] + ax) * damp; vy[i] = (vy[i] + ay) * damp;
       if (reduce) { px[i] = gx; py[i] = gy; } else { px[i] += vx[i]; py[i] += vy[i]; }
