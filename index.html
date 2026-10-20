@@ -229,6 +229,9 @@ footer a:hover{text-decoration:underline}
   var dropEl = document.getElementById('drop');
 
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Ambient motion. Add ?wiggle=off or ?twinkle=off to the URL to compare without it.
+  var WIGGLE = !reduce && !/[?&]wiggle=off/.test(location.search);
+  var TWINKLE = !reduce && !/[?&]twinkle=off/.test(location.search);
   var coarse = matchMedia('(pointer: coarse)').matches;
   var HINT = coarse ? 'Tap the dots to scatter them.'
                     : 'Click the dots to scatter them. Drop an image or video anywhere to redraw them.';
@@ -288,7 +291,7 @@ footer a:hover{text-decoration:underline}
   var cr = new Float32Array(N), cg = new Float32Array(N), cb = new Float32Array(N);
   var tr = new Float32Array(N), tg = new Float32Array(N), tb = new Float32Array(N);
   var sz = new Float32Array(N), ts = new Float32Array(N);
-  var wake = new Float64Array(N), ph = new Float32Array(N);
+  var wake = new Float64Array(N), ph = new Float32Array(N), sp = new Float32Array(N);
   var lumBuf = new Float32Array(N);
   var cdf = null;
 
@@ -627,13 +630,12 @@ footer a:hover{text-decoration:underline}
       if (src.type === 'rings') updateRings(now);
       else if (src.type === 'video') updateVideo(src);
     }
-    var still = !src || src.type === 'text' || src.type === 'image';
+    var WIG = 1.5; // wiggle radius in px: raise for livelier dots, lower for calmer
     var R = coarse ? 80 : 110, R2 = R * R, useP = ptr.on && !reduce;
     for (var i = 0, o = 0; i < N; i++, o += 6) {
       var k = 0.055, w = now - wake[i];
       if (w < 0) k = 0; else if (w < 220) k *= w / 220;
       var gx = tx[i], gy = ty[i];
-      if (still && !reduce) { gx += Math.sin(now * 0.0011 + ph[i]) * 0.7; gy += Math.cos(now * 0.0013 + ph[i] * 1.3) * 0.7; }
       var ax = (gx - px[i]) * k, ay = (gy - py[i]) * k;
       if (useP) {
         var dx = px[i] - ptr.x, dy = py[i] - ptr.y, d2 = dx * dx + dy * dy;
@@ -644,7 +646,21 @@ footer a:hover{text-decoration:underline}
       if (reduce) { px[i] = gx; py[i] = gy; } else { px[i] += vx[i]; py[i] += vy[i]; }
       cr[i] += (tr[i] - cr[i]) * 0.09; cg[i] += (tg[i] - cg[i]) * 0.09; cb[i] += (tb[i] - cb[i]) * 0.09;
       sz[i] += (ts[i] - sz[i]) * 0.1;
-      data[o] = px[i]; data[o + 1] = py[i]; data[o + 2] = cr[i]; data[o + 3] = cg[i]; data[o + 4] = cb[i]; data[o + 5] = sz[i];
+      // Each dot wiggles in place on its own rhythm. Applied at draw time, so it never
+      // pulls the dot off its spot and the shape holds perfectly still.
+      var wx = 0, wy = 0;
+      if (WIGGLE) {
+        var wa = now * 0.0034 * sp[i] + ph[i];
+        wx = (Math.cos(wa) + 0.45 * Math.cos(wa * 2.3 + ph[i])) * WIG;
+        wy = (Math.sin(wa * 1.31) + 0.45 * Math.sin(wa * 1.9 - ph[i])) * WIG;
+      }
+      var lit = 1;
+      if (TWINKLE) {
+        var tw = Math.sin(now * 0.0015 * sp[i] + ph[i]);
+        lit = 0.92 + 0.08 * tw;
+        if (tw > 0.97) lit += (tw - 0.97) * 18; // brief glint near the crest, about 1 dot in 14 at any moment
+      }
+      data[o] = px[i] + wx; data[o + 1] = py[i] + wy; data[o + 2] = cr[i] * lit; data[o + 3] = cg[i] * lit; data[o + 4] = cb[i] * lit; data[o + 5] = sz[i];
     }
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform2f(uRes, W, H); gl.uniform1f(uDpr, DPR); gl.uniform1f(uGain, 0.9);
@@ -679,7 +695,7 @@ footer a:hover{text-decoration:underline}
   resize();
   for (var i = 0; i < N; i++) {
     px[i] = tx[i] = Math.random() * W; py[i] = ty[i] = Math.random() * H;
-    ph[i] = Math.random() * 6.283; cr[i] = cg[i] = cb[i] = 1;
+    ph[i] = Math.random() * 6.283; sp[i] = 0.5 + Math.random() * 1.1; cr[i] = cg[i] = cb[i] = 1;
   }
   tick();
 
