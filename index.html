@@ -320,7 +320,7 @@ footer a:hover{text-decoration:underline}
 
   /* Pointillist sampler: dots land with probability tied to brightness,
      so light areas pack dense and shadows go empty. */
-  function fromPixels(d, sw, sh, f, o) {
+  function fromPixels(d, sw, sh, f, o, k0, k1) {
     var P = sw * sh;
     if (!cdf || cdf.length < P) cdf = new Float32Array(P);
     var acc = 0, i, j, l;
@@ -331,7 +331,7 @@ footer a:hover{text-decoration:underline}
       cdf[i] = acc;
     }
     var base = dotBase(f) * (o.size || 1);
-    for (var k = 0; k < N; k++) {
+    for (var k = k0 || 0, kEnd = k1 || N; k < kEnd; k++) {
       if (acc <= 0) { tx[k] = f.x + Math.random() * f.w; ty[k] = f.y + Math.random() * f.h; ts[k] = 0; continue; }
       var u = Math.random() * acc, lo = 0, hi = P - 1;
       while (lo < hi) { var m = (lo + hi) >> 1; if (cdf[m] < u) lo = m + 1; else hi = m; }
@@ -381,36 +381,219 @@ footer a:hover{text-decoration:underline}
     for (var k = 0; k < N; k++) { tr[k] = 0.957; tg[k] = 0.957; tb[k] = 0.95; }
   }
 
-  /* Systems: a sphere built from latitude rings, turning and breathing. */
-  var RU = new Float32Array(N), RV = new Float32Array(N), RW = new Float32Array(N);
-  (function initRings() {
-    var rings = 38, wsum = 0, ws = [], j;
-    for (j = 0; j < rings; j++) { var y = -0.96 + 1.92 * (j + 0.5) / rings; ws.push(Math.sqrt(1 - y * y)); wsum += ws[j]; }
-    var i = 0;
-    for (j = 0; j < rings && i < N; j++) {
-      var yy = -0.96 + 1.92 * (j + 0.5) / rings, rr = Math.sqrt(1 - yy * yy);
-      var cnt = j === rings - 1 ? N - i : Math.round(N * ws[j] / wsum);
-      for (var q = 0; q < cnt && i < N; q++, i++) {
-        var th = (q / cnt) * Math.PI * 2 + j * 0.37;
-        RU[i] = Math.cos(th) * rr; RV[i] = yy; RW[i] = Math.sin(th) * rr;
+  /* Systems: a short story told in dots. Website, graphic, a pen drawing on a tablet
+     that throbs "wow, wow" and becomes a finished graphic, a phone, another website,
+     a laptop that shuts, then "......" and a beep. Loops while Systems is hovered. */
+  var STORY = [
+    { kind: 'browser', img: 's-web1', dur: 1150 },
+    { kind: 'graphic', img: 's-gfx1', dur: 1050 },
+    { kind: 'wacom', dur: 1600 },
+    { kind: 'wow', dur: 750 },
+    { kind: 'graphic', img: 's-gfx2', dur: 1250 },
+    { kind: 'phone', img: 's-phone', dur: 1150 },
+    { kind: 'browser', img: 's-web2', dur: 1050 },
+    { kind: 'laptop', img: 's-laptop', dur: 1500 },
+    { kind: 'beep', dur: 1900 }
+  ];
+  var STORY_MS = STORY.reduce(function (t, sc) { return t + sc.dur; }, 0);
+  var SX = new Float32Array(N), SY = new Float32Array(N), SU = new Float32Array(N), SS = new Float32Array(N);
+  var role = new Uint8Array(N);
+  var storyStart = 0, sceneIdx = -1, sceneStart = 0, scene = null, beeped = false;
+  var SCENE_OPT = { gamma: 0.85, floor: 0.08, sat: 1.1, size: 1 };
+
+  function rr(c, x, y, w, h, r) {
+    c.beginPath(); c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+  function sampleDraw(aspect, scale, draw, o, k0, k1) {
+    var f = fit(aspect), s = scale || 1;
+    f = { x: f.x + f.w * (1 - s) / 2, y: f.y + f.h * (1 - s) / 2, w: f.w * s, h: f.h * s };
+    var sw = Math.max(80, Math.min(600, Math.round(f.w * 0.65))), sh = Math.max(60, Math.round(sw / aspect));
+    ensureOff(sw, sh);
+    octx.globalAlpha = 1; octx.fillStyle = '#000'; octx.fillRect(0, 0, sw, sh);
+    octx.save(); draw(octx, sw, sh); octx.restore();
+    fromPixels(octx.getImageData(0, 0, sw, sh).data, sw, sh, f, o, k0, k1);
+    return f;
+  }
+  function drawBrowser(img) {
+    return function (c, w, h) {
+      var lw = Math.max(2, w * 0.009), r = w * 0.025, bar = h * 0.085;
+      c.strokeStyle = '#fff'; c.fillStyle = '#fff'; c.lineWidth = lw;
+      rr(c, lw, lw, w - 2 * lw, h - 2 * lw, r); c.stroke();
+      c.beginPath(); c.moveTo(lw, bar); c.lineTo(w - lw, bar); c.stroke();
+      for (var j = 0; j < 3; j++) { c.beginPath(); c.arc(bar * 0.62 + j * bar * 0.55, bar * 0.54, bar * 0.15, 0, 7); c.fill(); }
+      c.lineWidth = lw * 0.7; rr(c, w * 0.3, bar * 0.26, w * 0.4, bar * 0.5, bar * 0.25); c.stroke();
+      if (img) {
+        rr(c, lw * 1.5, bar + lw * 0.5, w - 3 * lw, h - bar - 2 * lw, r * 0.6); c.clip();
+        c.globalAlpha = 0.9; c.drawImage(img, lw * 1.5, bar, w - 3 * lw, h - bar - 1.5 * lw);
+      }
+    };
+  }
+  function drawPhone(img) {
+    return function (c, w, h) {
+      var lw = Math.max(2, w * 0.03), r = w * 0.17;
+      c.strokeStyle = '#fff'; c.fillStyle = '#fff'; c.lineWidth = lw;
+      rr(c, lw, lw, w - 2 * lw, h - 2 * lw, r); c.stroke();
+      if (img) {
+        c.save(); rr(c, lw * 2.4, lw * 2.4, w - 4.8 * lw, h - 4.8 * lw, r * 0.82); c.clip();
+        c.globalAlpha = 0.9; c.drawImage(img, lw * 2.4, lw * 2.4, w - 4.8 * lw, h - 4.8 * lw); c.restore();
+      }
+      c.globalAlpha = 1; c.fillStyle = '#000';
+      rr(c, w * 0.34, h * 0.028, w * 0.32, h * 0.03, h * 0.015); c.fill();
+      c.strokeStyle = '#fff'; c.lineWidth = lw * 0.6; c.stroke();
+    };
+  }
+  function drawTablet(c, w, h) {
+    var lw = Math.max(2, w * 0.008);
+    c.strokeStyle = '#d8d8d8'; c.lineWidth = lw;
+    rr(c, lw, lw, w - 2 * lw, h - 2 * lw, h * 0.08); c.stroke();
+    c.lineWidth = lw * 0.6; c.setLineDash([lw * 2.5, lw * 2.5]);
+    c.strokeRect(w * 0.2, h * 0.14, w * 0.7, h * 0.72); c.setLineDash([]);
+    c.fillStyle = '#d8d8d8';
+    for (var j = 0; j < 4; j++) { rr(c, w * 0.06, h * (0.22 + j * 0.15), w * 0.07, h * 0.1, h * 0.02); c.fill(); }
+  }
+  function drawLaptop(img) {
+    return function (c, w, h) {
+      var lw = Math.max(2, w * 0.008), S = w * 0.78, x0 = (w - S) / 2, H1 = h * 0.86 - lw, bz = lw * 2.2;
+      c.strokeStyle = '#fff'; c.lineWidth = lw;
+      rr(c, x0, lw, S, H1, w * 0.02); c.stroke();
+      if (img) { c.save(); c.globalAlpha = 0.9; c.drawImage(img, x0 + bz, lw + bz, S - 2 * bz, H1 - 2 * bz); c.restore(); }
+      var top = lw + H1, bh = h * 0.07;
+      c.beginPath(); c.moveTo(w * 0.07, top); c.lineTo(w * 0.93, top); c.lineTo(w - lw, top + bh); c.lineTo(lw, top + bh); c.closePath();
+      c.globalAlpha = 0.35; c.fillStyle = '#fff'; c.fill(); c.globalAlpha = 1; c.stroke();
+      c.beginPath(); c.moveTo(w * 0.44, top + bh); c.lineTo(w * 0.56, top + bh); c.lineWidth = lw * 1.6; c.stroke();
+    };
+  }
+  function storyImg(name) { return imgs[name] || null; }
+  function setRGB(k, r, g, b) { tr[k] = r; tg[k] = g; tb[k] = b; }
+  function snapshot() { for (var k = 0; k < N; k++) { SX[k] = tx[k]; SY[k] = ty[k]; SS[k] = ts[k]; } }
+  function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function easeBack(t) { var c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+
+  // The pen's looping signature stroke, u in 0..1, inside the tablet's drawing area A.
+  function strokeAt(A, u) {
+    var R = A.h * 0.12;
+    return {
+      x: A.x + A.w * (0.1 + 0.8 * u) + R * 0.9 * Math.sin(u * Math.PI * 8),
+      y: A.y + A.h * 0.5 + A.h * 0.18 * Math.sin(u * Math.PI * 2) - R * Math.cos(u * Math.PI * 8)
+    };
+  }
+
+  function enterScene(i) {
+    var sc = STORY[i], k, im, f;
+    scene = { kind: sc.kind, dur: sc.dur };
+    beeped = false;
+    for (k = 0; k < N; k++) role[k] = 0;
+    if (sc.kind === 'browser') {
+      sampleDraw(1.464, 0.92, drawBrowser(storyImg(sc.img)), SCENE_OPT);
+    } else if (sc.kind === 'graphic') {
+      im = storyImg(sc.img);
+      var hero2 = sc.img === 's-gfx2';      // the finished graphic is the climax: bigger and brighter
+      if (im) sampleDraw(im.naturalWidth / im.naturalHeight, hero2 ? 1 : 0.9, function (c, w, h) { c.drawImage(im, 0, 0, w, h); },
+                         hero2 ? { gamma: 0.6, floor: 0.05, sat: 1.15, size: 1.3 } : { gamma: 0.8, floor: 0.07, sat: 1.1, size: 1.05 });
+      else sampleDraw(1.464, 0.92, drawBrowser(null), SCENE_OPT);
+    } else if (sc.kind === 'wacom') {
+      var kT = (N * 0.45) | 0, kP = (N * 0.57) | 0;
+      f = sampleDraw(1.6, 0.9, drawTablet, { gamma: 1, floor: 0.3, sat: 0, size: 0.85 }, 0, kT);
+      var b = dotBase(f);
+      scene.A = { x: f.x + f.w * 0.2, y: f.y + f.h * 0.14, w: f.w * 0.7, h: f.h * 0.72 };
+      scene.b = b;
+      var L = f.h * 0.48, pw = f.h * 0.045, dx = 0.5, dy = -0.866;
+      for (k = kT; k < kP; k++) {           // pen: offsets from its tip, tapering to a point
+        var t = Math.random(), wdt = pw * (t < 0.1 ? t / 0.1 : 1) * (t > 0.28 && t < 0.4 ? 1.25 : 1);
+        var n = (Math.random() - 0.5) * wdt;
+        SX[k] = dx * t * L - dy * n; SY[k] = dy * t * L + dx * n; role[k] = 1;
+        var g = t > 0.28 && t < 0.4 ? 1 : 0.78; setRGB(k, g, g, g);
+      }
+      for (k = kP; k < N; k++) {            // the stroke the pen draws, in red
+        SU[k] = Math.random(); SX[k] = (Math.random() - 0.5) * 3.2; SY[k] = (Math.random() - 0.5) * 3.2;
+        role[k] = 2; setRGB(k, 0.96, 0.13, 0.2);
+      }
+    } else if (sc.kind === 'wow') {
+      snapshot();
+      scene.cx = box.x + box.w / 2; scene.cy = box.y + box.h / 2;
+    } else if (sc.kind === 'phone') {
+      f = sampleDraw(9 / 19.5, 0.94, drawPhone(storyImg(sc.img)), SCENE_OPT);
+      snapshot(); scene.cx = f.x + f.w / 2; scene.cy = f.y + f.h / 2; scene.h = f.h;
+    } else if (sc.kind === 'laptop') {
+      f = sampleDraw(1.7, 0.9, drawLaptop(storyImg(sc.img)), SCENE_OPT);
+      snapshot(); scene.hinge = f.y + f.h * 0.86;
+      for (k = 0; k < N; k++) role[k] = ty[k] < scene.hinge ? 1 : 0;
+    } else if (sc.kind === 'beep') {
+      scene.cx = box.x + box.w / 2; scene.cy = box.y + box.h / 2;
+      scene.gap = Math.max(18, Math.min(34, box.w * 0.035));
+      for (k = 0; k < N; k++) {
+        var a = Math.random() * 6.283, rad = Math.sqrt(Math.random()) * 6;
+        SX[k] = Math.cos(a) * rad; SY[k] = Math.sin(a) * rad;
+        role[k] = k % 10 < 3 ? 1 : 0;       // a third of the dots make up the six beads; the rest hide
+        setRGB(k, 0.96, 0.96, 0.95);
       }
     }
-    for (; i < N; i++) { RU[i] = 0; RV[i] = 0; RW[i] = 1; }
-  })();
-  function updateRings(now) {
-    var f = fit(1), cx = f.x + f.w / 2, cy = f.y + f.h / 2, R = f.w * 0.47;
-    var a = now * 0.00022, ca = Math.cos(a), sa = Math.sin(a);
-    var cb2 = Math.cos(0.42), sb2 = Math.sin(0.42);
-    var base = Math.max(1.4, dotBase(f) * 0.8);
-    for (var i = 0; i < N; i++) {
-      var w = 1 + 0.07 * Math.sin(RV[i] * 9 - now * 0.002);
-      var x = (RU[i] * ca - RW[i] * sa) * w, z = (RU[i] * sa + RW[i] * ca) * w, y = RV[i] * w;
-      var y2 = y * cb2 - z * sb2, z2 = y * sb2 + z * cb2;
-      var p = 1.9 / (2.6 - z2), dp = (z2 + 1) / 2;
-      tx[i] = cx + x * R * p; ty[i] = cy + y2 * R * p;
-      ts[i] = base * (0.35 + 0.95 * dp);
-      tr[i] = 0.18 + 0.82 * dp; tg[i] = 0.24 + 0.76 * dp; tb[i] = 0.95;
+  }
+  function updateScene(t, now) {           // t: 0..1 through the scene
+    var k, sc = scene, ms = t * sc.dur;
+    if (sc.kind === 'wacom') {
+      var p = ease(Math.min(1, t / 0.82)), tip = strokeAt(sc.A, p), b = sc.b;
+      for (k = 0; k < N; k++) {
+        if (role[k] === 1) { tx[k] = tip.x + SX[k]; ty[k] = tip.y + SY[k]; ts[k] = b * 0.95; }
+        else if (role[k] === 2) {
+          if (SU[k] <= p) { var q = strokeAt(sc.A, SU[k]); tx[k] = q.x + SX[k]; ty[k] = q.y + SY[k]; ts[k] = b * 1.2; }
+          else { tx[k] = tip.x; ty[k] = tip.y; ts[k] = 0; }
+        }
+      }
+    } else if (sc.kind === 'wow') {
+      var ph2 = (t * 2) % 1, bump = Math.pow(Math.sin(Math.PI * ph2), 2), sc2 = 1 + 0.17 * bump;
+      for (k = 0; k < N; k++) {
+        tx[k] = sc.cx + (SX[k] - sc.cx) * sc2; ty[k] = sc.cy + (SY[k] - sc.cy) * sc2; ts[k] = SS[k] * (1 + 0.6 * bump);
+      }
+    } else if (sc.kind === 'phone') {
+      var e = easeBack(Math.min(1, ms / 420)), s2 = 0.5 + 0.5 * e, off = (1 - Math.min(1, ms / 420)) * sc.h * 0.3;
+      for (k = 0; k < N; k++) { tx[k] = sc.cx + (SX[k] - sc.cx) * s2; ty[k] = sc.cy + (SY[k] - sc.cy) * s2 + off; }
+    } else if (sc.kind === 'laptop') {
+      var a2 = ease(clamp01((ms - 520) / 760)), c = Math.cos(a2 * Math.PI / 2);
+      for (k = 0; k < N; k++) if (role[k] === 1) {
+        ty[k] = sc.hinge - (sc.hinge - SY[k]) * c; ts[k] = SS[k] * (0.55 + 0.45 * c);
+      }
+    } else if (sc.kind === 'beep') {
+      var merge = ease(clamp01((ms - 1000) / 160)), flash = ms > 1160 ? Math.exp(-(ms - 1160) / 170) : 0;
+      if (ms > 1160 && !beeped) { beeped = true; beep(); }
+      var breathe = ms > 1450 ? 0.75 + 0.25 * Math.sin((ms - 1450) * 0.006) : 1;
+      for (k = 0; k < N; k++) {
+        var j = k % 6, bx = sc.cx + (j - 2.5) * sc.gap * (1 - merge);
+        tx[k] = bx + SX[k] * (1 - 0.5 * merge); ty[k] = sc.cy + SY[k] * (1 - 0.5 * merge);
+        var on = role[k] === 1 && ms > 120 + j * 150;
+        ts[k] = on ? 2.4 * (1 + 1.8 * flash) * breathe : 0;
+      }
     }
+  }
+  function startStory(now) { storyStart = now; sceneIdx = -1; updateStory(now); }
+  function updateStory(now) {
+    var e = (now - storyStart) % STORY_MS, acc = 0, i = 0;
+    while (i < STORY.length - 1 && e >= acc + STORY[i].dur) { acc += STORY[i].dur; i++; }
+    if (i !== sceneIdx) { sceneIdx = i; sceneStart = now - (e - acc); enterScene(i); morph(i === 0 ? 260 : 150); }
+    updateScene(clamp01((now - sceneStart) / STORY[i].dur), now);
+  }
+
+  /* A quiet beep for the end of the story. Browsers only allow sound after the visitor
+     has clicked or tapped the page once, so until then the beep is silent. */
+  var actx = null;
+  function unlockAudio() {
+    try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+    } catch (e) { actx = null; }
+  }
+  addEventListener('pointerdown', unlockAudio, { passive: true });
+  addEventListener('keydown', unlockAudio);
+  function beep() {
+    if (!actx || actx.state !== 'running') return;
+    var t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(1320, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.06, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.17);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + 0.2);
   }
 
   /* Video (webcam mirror or a talking-head clip): a stable halftone grid. */
@@ -455,7 +638,7 @@ footer a:hover{text-decoration:underline}
   var imgs = {};
   var SOURCES = {
     wordmark:    { type: 'text', text: 'FLICK' },
-    systems:     { type: 'rings' },
+    systems:     { type: 'story', k: 0.1 },
     chaos:       { type: 'image', src: 'media/chaos.jpg', gamma: 0.7, floor: 0.08, sat: 1.05, size: 1.05 },
     photography: { type: 'image', src: 'media/photography.jpg', gamma: 0.8, floor: 0.06, sat: 1.1, size: 1.1 },
     portrait:    { type: 'image', gamma: 0.85, floor: 0.06, sat: 0.9, size: 1.1 },
@@ -470,7 +653,7 @@ footer a:hover{text-decoration:underline}
     var s = SOURCES[name];
     if (s.type === 'text') sampleText(s.text);
     else if (s.type === 'image') { if (!imgs[name]) return false; sampleImage(imgs[name], s); }
-    else if (s.type === 'rings') updateRings(performance.now());
+    else if (s.type === 'story') startStory(performance.now());
     else if (s.type === 'video') { grid = null; layoutGrid(s.vid); }
     return true;
   }
@@ -527,16 +710,24 @@ footer a:hover{text-decoration:underline}
   var CYCLE = [null, 'systems', 'chaos', 'photography'], ci = 0, cycleTimer = 0;
   function startCycle() {
     if (!coarse || reduce || cycleTimer) return;
-    cycleTimer = setInterval(function () {
-      if (!running || home === 'mirror' || home === 'custom' || home === 'dropped') return;
-      ci = (ci + 1) % CYCLE.length; setPreview(CYCLE[ci]);
-    }, 4200);
+    (function next() {
+      var dwell = CYCLE[ci] === 'systems' ? STORY_MS + 300 : 4200;
+      cycleTimer = setTimeout(function () {
+        if (running && home !== 'mirror' && home !== 'custom' && home !== 'dropped') {
+          ci = (ci + 1) % CYCLE.length; setPreview(CYCLE[ci]);
+        }
+        next();
+      }, dwell);
+    })();
   }
-  function stopCycle() { clearInterval(cycleTimer); cycleTimer = 0; }
+  function stopCycle() { clearTimeout(cycleTimer); cycleTimer = 0; }
 
   /* ---------------- pointer: repel and scatter ---------------- */
   var ptr = { x: -1e5, y: -1e5, on: false };
   var LENS = 170, LENS_TOUCH = 115, lens = 0; // cursor circle radius in px (desktop, touch)
+  var overNav = false;
+  nav.addEventListener('pointerenter', function () { overNav = true; });
+  nav.addEventListener('pointerleave', function () { overNav = false; });
   hero.addEventListener('pointermove', function (e) {
     var r = hero.getBoundingClientRect(); ptr.x = e.clientX - r.left; ptr.y = e.clientY - r.top; ptr.on = true;
   }, { passive: true });
@@ -628,15 +819,16 @@ footer a:hover{text-decoration:underline}
     raf = requestAnimationFrame(frame);
     var src = current ? SOURCES[current] : null;
     if (src) {
-      if (src.type === 'rings') updateRings(now);
+      if (src.type === 'story') updateStory(now);
       else if (src.type === 'video') updateVideo(src);
     }
     var WIG = 1.5; // wiggle radius in px: raise for livelier dots, lower for calmer
     // Cursor lens: a clean circular hole that opens and closes smoothly.
-    lens += ((ptr.on && !reduce ? 1 : 0) - lens) * 0.14;
+    lens += ((ptr.on && !overNav && !reduce ? 1 : 0) - lens) * 0.14;
     var R = (coarse ? LENS_TOUCH : LENS) * lens, R2 = R * R, useP = lens > 0.01;
+    var KS = (src && src.k) || 0.055;
     for (var i = 0, o = 0; i < N; i++, o += 6) {
-      var k = 0.055, w = now - wake[i];
+      var k = KS, w = now - wake[i];
       if (w < 0) k = 0; else if (w < 220) k *= w / 220;
       var gx = tx[i], gy = ty[i];
       if (useP) {
@@ -708,6 +900,9 @@ footer a:hover{text-decoration:underline}
   }
   tick();
 
+  ['s-web1', 's-gfx1', 's-gfx2', 's-phone', 's-web2', 's-laptop'].forEach(function (n) {
+    loadImg('media/' + n + '.jpg').then(function (im) { imgs[n] = im; }).catch(function () {});
+  });
   ['chaos', 'photography'].forEach(function (n) {
     loadImg(SOURCES[n].src).then(function (im) {
       imgs[n] = im;
