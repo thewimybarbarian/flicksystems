@@ -437,10 +437,11 @@ footer a:hover{text-decoration:underline}
       l = (d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114) / 255;
       lumBuf[i] = l; if (l < mn) mn = l; if (l > mx) mx = l;
     }
-    var span = Math.max(0.08, mx - mn);
+    var span = Math.max(0.08, mx - mn), vbase = Math.max(1.5, Math.min(4.4, grid.cw * 1.05)) * 1.15;
     for (i = 0; i < n; i++) {
-      l = Math.pow(clamp01((lumBuf[i] - mn) / span), 1.6);
-      ts[i] = grid.cw * 1.25 * l;
+      l = Math.pow(clamp01((lumBuf[i] - mn) / span), 1.3);
+      // same sizing as the images: every lit spot gets a full dot, brightness only adds to it
+      ts[i] = l < 0.08 ? 0 : vbase * (0.35 + 1.0 * l);
       var c = 0.55 + 0.45 * l;
       tr[i] = 0.957 * c; tg[i] = 0.957 * c; tb[i] = 0.95 * c;
     }
