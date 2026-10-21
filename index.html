@@ -384,7 +384,7 @@ footer a:hover{text-decoration:underline}
 
   /* Channel animations: generic little motion pictures drawn in dots.
      Chaos: shapes tumbling, spinning and bouncing at random.
-     Photography: a camera whose aperture snaps shut and whose flash fires.
+     Photography: a Sony A7 III whose aperture snaps shut as its lamp fires.
      Systems: scattered dots pulled into a connected network that carries
      signal, then let go back into chaos. */
   var AX = new Float32Array(N), AY = new Float32Array(N), AU = new Float32Array(N);
@@ -503,27 +503,52 @@ footer a:hover{text-decoration:underline}
 
   /* ---- Photography ---- */
   var CAM_LOOP = 2600;
+  // An arc as line segments, angles in radians (0 = right, clockwise on screen).
+  function arcSegs(cx, cy, r, a0, a1, n) {
+    var s = [];
+    for (var i = 0; i < n; i++) {
+      var a = a0 + (a1 - a0) * i / n, b = a0 + (a1 - a0) * (i + 1) / n;
+      s.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r, cx + Math.cos(b) * r, cy + Math.sin(b) * r]);
+    }
+    return s;
+  }
+  // A Sony A7 III seen from the front, in units of its width (127 x 96 mm body):
+  // grip on the left, angular viewfinder hump over an off-centre E-mount.
   function initCamera(now) {
-    var f = fit(1.45), w = f.w * 0.7, h = f.h * 0.7, k = 0, e;
-    var cx = f.x + f.w / 2, cy = f.y + f.h / 2 + h * 0.04;
-    var c = w * 0.06, top = -0.32 * h, bot = 0.5 * h, L = -0.5 * w, R = 0.5 * w;
-    var body = [[L + c, top, R - c, top], [R - c, top, R, top + c], [R, top + c, R, bot - c], [R, bot - c, R - c, bot],
-                [R - c, bot, L + c, bot], [L + c, bot, L, bot - c], [L, bot - c, L, top + c], [L, top + c, L + c, top]];
-    var hump = [[-0.2 * w, top, -0.13 * w, -0.5 * h], [-0.13 * w, -0.5 * h, 0.13 * w, -0.5 * h], [0.13 * w, -0.5 * h, 0.2 * w, top]];
-    var button = rectSegs(0.27 * w, -0.41 * h, 0.39 * w, top);
-    var flash = rectSegs(-0.43 * w, -0.24 * h, -0.27 * w, -0.12 * h);
-    var lc = 0.1 * h, R1 = 0.36 * h, R2 = 0.28 * h;
-    var lens = circleSegs(0, lc, R1, 72).concat(circleSegs(0, lc, R2, 60));
-    var nBody = (N * 0.5) | 0, nFlash = (N * 0.04) | 0, nIris = (N * 0.12) | 0, nBlade = (N * 0.1) | 0;
-    onSegments(body.concat(hump, button, lens), 0, nBody, 1.1);
+    var f = fit(1.33), W = f.w * 0.7, k = 0, e;
+    var cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+    function sc(segs) { return segs.map(function (s) { return [s[0] * W, s[1] * W, s[2] * W, s[3] * W]; }); }
+    var T = -0.187, B = 0.377, G = -0.29, mx = 0.03, my = 0.105, rc = 0.035;
+    var body = [[G, T, mx - 0.2, T], [mx - 0.2, T, mx - 0.115, -0.37], [mx - 0.115, -0.377, mx + 0.115, -0.377],
+                [mx + 0.115, -0.37, mx + 0.2, T], [mx + 0.2, T, 0.5 - rc, T]]
+      .concat(arcSegs(0.5 - rc, T + rc, rc, -Math.PI / 2, 0, 4))
+      .concat([[0.5, T + rc, 0.5, B - rc]])
+      .concat(arcSegs(0.5 - rc, B - rc, rc, 0, Math.PI / 2, 4))
+      .concat([[0.5 - rc, B, G, B]]);
+    var gR = 0.09, gR2 = 0.07, gT = -0.205;                      // the grip, rounded on its outer edge
+    var grip = [[G, gT, -0.5 + gR, gT]]
+      .concat(arcSegs(-0.5 + gR, gT + gR, gR, -Math.PI / 2, -Math.PI, 8))
+      .concat([[-0.5, gT + gR, -0.5, B - gR2]])
+      .concat(arcSegs(-0.5 + gR2, B - gR2, gR2, Math.PI, Math.PI / 2, 6))
+      .concat([[-0.5 + gR2, B, G, B], [G, gT, G, B]]);
+    var shutter = rectSegs(-0.43, -0.238, -0.34, gT).concat([[-0.445, -0.238, -0.325, -0.238]]);
+    var dial = rectSegs(-0.282, -0.232, -0.182, T);
+    for (var x = -0.27; x < -0.19; x += 0.016) dial.push([x, -0.232, x, T]);   // knurled edge
+    var shoe = rectSegs(mx - 0.075, -0.398, mx + 0.075, -0.377);
+    var lugs = circleSegs(0.513, -0.12, 0.014, 10).concat(circleSegs(-0.513, -0.12, 0.014, 10));
+    var release = circleSegs(mx + 0.265, 0.17, 0.02, 14);
+    var mount = circleSegs(mx, my, 0.235, 80).concat(circleSegs(mx, my, 0.2, 72), circleSegs(mx, my, 0.17, 64));
+    var lamp = circleSegs(-0.245, -0.115, 0.02, 14);              // AF-assist lamp: where the burst comes from
+    var nBody = (N * 0.52) | 0, nLamp = (N * 0.04) | 0, nIris = (N * 0.12) | 0, nBlade = (N * 0.1) | 0;
+    onSegments(sc(body.concat(grip, shutter, dial, shoe, lugs, release, mount)), 0, nBody, 1.1);
     for (; k < nBody; k++) { AR[k] = 0; setRGB(k, 0.94, 0.94, 0.93); }
-    onSegments(flash, k, nFlash, 1.1);
-    for (e = k + nFlash; k < e; k++) { AR[k] = 4; setRGB(k, 1, 0.97, 0.86); }
+    onSegments(sc(lamp), k, nLamp, 0.8);
+    for (e = k + nLamp; k < e; k++) { AR[k] = 4; setRGB(k, 1, 0.78, 0.55); }
     for (e = k + nIris; k < e; k++) { AR[k] = 1; AU[k] = Math.random() * 6; setRGB(k, 0.82, 0.88, 1); }
     for (e = k + nBlade; k < e; k++) { AR[k] = 2; AU[k] = Math.random(); AG[k] = (Math.random() * 6) | 0; setRGB(k, 0.7, 0.76, 0.9); }
     for (; k < N; k++) { AR[k] = 3; AU[k] = Math.random(); AG[k] = (Math.random() * 28) | 0; setRGB(k, 1, 0.94, 0.78); }
-    anim = { kind: 'camera', t0: now, cx: cx, cy: cy, lc: lc, R2: R2, w: w, fx: -0.35 * w, fy: -0.18 * h,
-             base: Math.max(1.6, Math.min(2.6, w / 220)) };
+    anim = { kind: 'camera', t0: now, cx: cx, cy: cy, mx: mx * W, my: my * W, R2: 0.165 * W, w: W,
+             fx: -0.245 * W, fy: -0.115 * W, base: Math.max(1.6, Math.min(2.6, W / 220)) };
   }
   function updateCamera(now) {
     var A = anim, t = (now - A.t0) % CAM_LOOP, close = 0;
@@ -539,13 +564,13 @@ footer a:hover{text-decoration:underline}
         if (r === 4 && fl >= 0) size = A.base * (1 + 2.5 * (1 - fl));
       } else if (r === 1) {                 // the iris: a hexagon that shrinks as it closes
         var u = AU[k], i = u | 0, f = u - i, a0 = i / 6 * 6.283 + rot, a1 = (i + 1) / 6 * 6.283 + rot;
-        lx = (Math.cos(a0) + (Math.cos(a1) - Math.cos(a0)) * f) * ri;
-        ly = A.lc + (Math.sin(a0) + (Math.sin(a1) - Math.sin(a0)) * f) * ri;
+        lx = A.mx + (Math.cos(a0) + (Math.cos(a1) - Math.cos(a0)) * f) * ri;
+        ly = A.my + (Math.sin(a0) + (Math.sin(a1) - Math.sin(a0)) * f) * ri;
       } else if (r === 2) {                 // blade edges from each iris corner out to the lens ring
         var a = AG[k] / 6 * 6.283 + rot, vx0 = Math.cos(a) * ri, vy0 = Math.sin(a) * ri;
         var ex = Math.cos(a + 1.1) * A.R2, ey = Math.sin(a + 1.1) * A.R2;
-        lx = vx0 + (ex - vx0) * AU[k]; ly = A.lc + vy0 + (ey - vy0) * AU[k];
-      } else {                              // flash rays
+        lx = A.mx + vx0 + (ex - vx0) * AU[k]; ly = A.my + vy0 + (ey - vy0) * AU[k];
+      } else {                              // the burst from the AF-assist lamp
         if (fl < 0) { lx = A.fx; ly = A.fy; size = 0; }
         else {
           var ang = AG[k] / 28 * 6.283, d = AU[k] * A.w * 0.55 * ease(Math.min(1, fl * 1.6));
