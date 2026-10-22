@@ -359,29 +359,6 @@ footer a:hover{text-decoration:underline}
     fromPixels(octx.getImageData(0, 0, sw, sh).data, sw, sh, f, o);
   }
 
-  function sampleText(text) {
-    var f = { x: box.x, y: box.y, w: box.w, h: box.h };
-    var sw = Math.max(140, Math.min(680, Math.round(f.w * 0.55))), sh = Math.max(60, Math.round(sw * f.h / f.w));
-    ensureOff(sw, sh);
-    octx.fillStyle = '#000'; octx.fillRect(0, 0, sw, sh);
-    octx.fillStyle = '#fff'; octx.textAlign = 'center'; octx.textBaseline = 'middle';
-    // On tall screens the wordmark runs up the field, poster style, instead of shrinking to a sliver.
-    var tall = f.h > f.w * 1.25, lenAxis = tall ? sh : sw, crossAxis = tall ? sw : sh;
-    var fs = crossAxis * 0.8;
-    octx.font = '900 ' + fs + 'px Doto, Geist, sans-serif';
-    var mw = octx.measureText(text).width, maxW = lenAxis * 0.94;
-    if (mw > maxW) { fs *= maxW / mw; octx.font = '900 ' + fs + 'px Doto, Geist, sans-serif'; }
-    octx.save();
-    octx.translate(sw / 2, sh / 2);
-    if (tall) octx.rotate(-Math.PI / 2);
-    octx.fillText(text, 0, 0);
-    octx.strokeStyle = '#fff'; octx.lineWidth = Math.max(1, fs * 0.022); octx.lineJoin = 'round';
-    octx.strokeText(text, 0, 0);
-    octx.restore();
-    fromPixels(octx.getImageData(0, 0, sw, sh).data, sw, sh, f, { gamma: 1, floor: 0.5, sat: 0, size: 0.82 });
-    for (var k = 0; k < N; k++) { tr[k] = 0.957; tg[k] = 0.957; tb[k] = 0.95; }
-  }
-
   /* Channel animations: generic little motion pictures drawn in dots.
      Chaos: shapes tumbling, spinning and bouncing at random.
      Photography: a Sony A7 III whose aperture snaps shut as its lamp fires.
@@ -644,14 +621,99 @@ footer a:hover{text-decoration:underline}
     }
   }
 
+  /* ---- FLICK in 3D ----
+     The Doto wordmark is rastered, then every lit pixel becomes a dot on the
+     front face, the back face or the side walls of an extruded letter, so each
+     of Doto's square dots turns into a little block. The word sways in
+     perspective, tilts toward the cursor, bobs letter by letter, and every few
+     seconds a spin ripples through F, L, I, C, K in turn. */
+  var AZ = new Float32Array(N);
+  var WORD_SPIN_EVERY = 5200, WORD_SPIN_MS = 900;
+  function initWord3D(now) {
+    var text = 'FLICK', tall = box.h > box.w * 1.25;
+    var len = tall ? box.h : box.w, cross = tall ? box.w : box.h;
+    var cw = Math.round(Math.max(160, Math.min(700, len * 0.55))), ch = Math.max(60, Math.round(cw * cross / len));
+    var toScreen = len / cw;                                  // canvas px -> screen px
+    ensureOff(cw, ch);
+    octx.fillStyle = '#000'; octx.fillRect(0, 0, cw, ch);
+    var fs = ch * 0.62;
+    octx.font = '900 ' + fs + 'px Doto, Geist, sans-serif';
+    var full = octx.measureText(text).width, maxW = cw * 0.84;
+    if (full > maxW) { fs *= maxW / full; octx.font = '900 ' + fs + 'px Doto, Geist, sans-serif'; full = octx.measureText(text).width; }
+    var x0 = (cw - full) / 2, edges = [x0], i, k;
+    for (i = 1; i <= text.length; i++) edges.push(x0 + octx.measureText(text.slice(0, i)).width);
+    octx.fillStyle = '#fff'; octx.textBaseline = 'middle'; octx.textAlign = 'left';
+    octx.fillText(text, x0, ch / 2);
+    octx.strokeStyle = '#fff'; octx.lineWidth = Math.max(1, fs * 0.022); octx.lineJoin = 'round';
+    octx.strokeText(text, x0, ch / 2);
+    var d = octx.getImageData(0, 0, cw, ch).data, face = [], side = [];
+    function lit(x, y) { return x >= 0 && y >= 0 && x < cw && y < ch && d[(y * cw + x) * 4] > 128; }
+    for (var y = 0; y < ch; y++) for (var x = 0; x < cw; x++) {
+      if (!lit(x, y)) continue;
+      face.push(x, y);
+      if (!lit(x - 1, y) || !lit(x + 1, y) || !lit(x, y - 1) || !lit(x, y + 1)) side.push(x, y);
+    }
+    var depth = fs * toScreen * 0.34, nFront = (N * 0.42) | 0, nBack = (N * 0.22) | 0;
+    var centers = [];
+    for (i = 0; i < text.length; i++) centers.push(((edges[i] + edges[i + 1]) / 2 - cw / 2) * toScreen);
+    for (k = 0; k < N; k++) {
+      var list = k < nFront + nBack || !side.length ? face : side, j = ((Math.random() * (list.length / 2)) | 0) * 2;
+      var px0 = list[j] + Math.random(), py0 = list[j + 1] + Math.random();
+      AX[k] = (px0 - cw / 2) * toScreen; AY[k] = (py0 - ch / 2) * toScreen;
+      AZ[k] = k < nFront ? -depth / 2 : k < nFront + nBack ? depth / 2 : rnd(-depth / 2, depth / 2);
+      AR[k] = k < nFront ? 0 : k < nFront + nBack ? 1 : 2;
+      var li = 0; while (li < text.length - 1 && px0 > edges[li + 1]) li++;
+      AG[k] = li;
+    }
+    anim = {
+      kind: 'word3d', t0: now, tall: tall, centers: centers, depth: depth, F: len * 1.6,
+      cx: box.x + box.w / 2, cy: box.y + box.h / 2, bob: fs * toScreen * 0.05,
+      base: Math.max(1.4, Math.min(3, Math.sqrt(face.length / 2 / N) * toScreen * 1.15)),
+      yawP: 0, pitchP: 0, ca: new Float32Array(text.length), sa: new Float32Array(text.length), by: new Float32Array(text.length)
+    };
+  }
+  function updateWord3D(now) {
+    var A = anim, t = reduce ? 0 : now - A.t0, i, k, nl = A.centers.length;
+    // ease toward the cursor so the word tilts to follow it
+    var wantYaw = 0, wantPitch = 0;
+    if (ptr.on && !overNav && !reduce) { wantYaw = (ptr.x - A.cx) / W * 0.9; wantPitch = -(ptr.y - A.cy) / H * 0.7; }
+    A.yawP += (wantYaw - A.yawP) * 0.06; A.pitchP += (wantPitch - A.pitchP) * 0.06;
+    var yaw = 0.32 * Math.sin(t * 0.00045) + A.yawP, pitch = 0.16 * Math.sin(t * 0.00033) + A.pitchP;
+    if (A.tall) { var sw = yaw; yaw = -pitch; pitch = sw; }   // the word runs vertically on phones
+    var cy_ = Math.cos(yaw), sy_ = Math.sin(yaw), cp = Math.cos(pitch), sp_ = Math.sin(pitch);
+    for (i = 0; i < nl; i++) {
+      var local = ((t - i * 140) % WORD_SPIN_EVERY + WORD_SPIN_EVERY) % WORD_SPIN_EVERY;
+      var spin = local < WORD_SPIN_MS ? ease(local / WORD_SPIN_MS) * 6.283 : 0;
+      A.ca[i] = Math.cos(spin); A.sa[i] = Math.sin(spin);
+      A.by[i] = reduce ? 0 : Math.sin(t * 0.0021 + i * 0.8) * A.bob;
+    }
+    var zr = A.depth * 2 + 1;
+    for (k = 0; k < N; k++) {
+      var li = AG[k], c = A.centers[li], x0 = AX[k] - c, z0 = AZ[k];
+      var x1 = x0 * A.ca[li] - z0 * A.sa[li] + c, z1 = x0 * A.sa[li] + z0 * A.ca[li], y1 = AY[k] + A.by[li];
+      var x2 = x1 * cy_ - z1 * sy_, z2 = x1 * sy_ + z1 * cy_;
+      var y3 = y1 * cp - z2 * sp_, z3 = y1 * sp_ + z2 * cp;
+      var p = A.F / (A.F + z3), sx = x2 * p, sy = y3 * p;
+      if (A.tall) { var tmp = sx; sx = sy; sy = -tmp; }
+      tx[k] = A.cx + sx; ty[k] = A.cy + sy;
+      var near = clamp01(0.5 - z3 / zr * 1.4);             // closer dots brighter and bigger
+      var wall = AR[k] === 2 ? 0.72 : 1;
+      var lum = (0.4 + 0.6 * near) * wall;
+      tr[k] = 0.96 * lum; tg[k] = 0.96 * lum; tb[k] = (0.95 + 0.05 * (1 - near)) * lum;
+      ts[k] = A.base * p * (0.7 + 0.45 * near);
+    }
+  }
+
   function initAnim(fn, now) {
-    if (fn === 'chaos') initChaos(now); else if (fn === 'camera') initCamera(now); else initNetwork(now);
+    if (fn === 'chaos') initChaos(now); else if (fn === 'camera') initCamera(now);
+    else if (fn === 'word3d') initWord3D(now); else initNetwork(now);
     updateAnim(now);
   }
   function updateAnim(now) {
     if (!anim) return;
     if (anim.kind === 'chaos') updateChaos(now);
     else if (anim.kind === 'camera') updateCamera(now);
+    else if (anim.kind === 'word3d') updateWord3D(now);
     else updateNetwork(now);
   }
 
@@ -697,7 +759,7 @@ footer a:hover{text-decoration:underline}
   /* ---------------- sources and states ---------------- */
   var imgs = {};
   var SOURCES = {
-    wordmark:    { type: 'text', text: 'FLICK' },
+    wordmark:    { type: 'anim', fn: 'word3d', k: 0.22 },
     systems:     { type: 'anim', fn: 'network', k: 0.2 },
     chaos:       { type: 'anim', fn: 'chaos', k: 0.25 },
     photography: { type: 'anim', fn: 'camera', k: 0.22 },
@@ -711,8 +773,7 @@ footer a:hover{text-decoration:underline}
 
   function build(name) {
     var s = SOURCES[name];
-    if (s.type === 'text') sampleText(s.text);
-    else if (s.type === 'image') { if (!imgs[name]) return false; sampleImage(imgs[name], s); }
+    if (s.type === 'image') { if (!imgs[name]) return false; sampleImage(imgs[name], s); }
     else if (s.type === 'anim') initAnim(s.fn, performance.now());
     else if (s.type === 'video') { grid = null; layoutGrid(s.vid); }
     return true;
