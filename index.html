@@ -360,8 +360,8 @@ footer a:hover{text-decoration:underline}
   }
 
   /* Channel animations: generic little motion pictures drawn in dots.
-     Chaos: shapes tumbling, spinning and bouncing at random.
-     Photography: a Sony A7 III whose aperture snaps shut as its lamp fires.
+     Chaos: cubes, spheres and pyramids tumbling and bouncing in 3D.
+     Photography: a Sony A7 III in 3D whose aperture snaps shut as its lamp fires.
      Systems: scattered dots pulled into a connected network that carries
      signal, then let go back into chaos. */
   var AX = new Float32Array(N), AY = new Float32Array(N), AU = new Float32Array(N);
@@ -372,7 +372,7 @@ footer a:hover{text-decoration:underline}
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
   function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
-  function setRGB(k, r, g, b) { tr[k] = r; tg[k] = g; tb[k] = b; }
+  function setRGB(k, r, g, b) { tr[k] = r; tg[k] = g; tb[k] = b; BR[k] = r; BG[k] = g; BB[k] = b; }
 
   // Scatter n dots along a list of line segments [x1, y1, x2, y2], starting at particle k0.
   function onSegments(segs, k0, n, jit) {
@@ -396,89 +396,133 @@ footer a:hover{text-decoration:underline}
     return s;
   }
 
-  /* ---- Chaos ---- */
-  // A point on (or inside) a unit square, circle or triangle centred on 0,0.
-  function shapePoint(kind, filled) {
-    var a, r, t, f, j = function () { return rnd(-0.06, 0.06); };
+  /* ---- shared 3D: rotate a point by the scene's yaw and pitch, project it with
+     perspective, and shade it so nearer dots are brighter and bigger ---- */
+  var BR = new Float32Array(N), BG = new Float32Array(N), BB = new Float32Array(N);
+  function view3(A, yaw, pitch) { A.cY = Math.cos(yaw); A.sY = Math.sin(yaw); A.cP = Math.cos(pitch); A.sP = Math.sin(pitch); }
+  function put3(A, k, x, y, z, size, shadeZ, zr) {
+    var x2 = x * A.cY - z * A.sY, z2 = x * A.sY + z * A.cY;
+    var y3 = y * A.cP - z2 * A.sP, z3 = y * A.sP + z2 * A.cP;
+    var p = A.F / (A.F + z3), sx = x2 * p, sy = y3 * p;
+    if (A.tall) { var t = sx; sx = sy; sy = -t; }
+    tx[k] = A.cx + sx; ty[k] = A.cy + sy;
+    var near = clamp01(0.5 - (shadeZ === undefined ? z3 : shadeZ) / zr), lum = 0.35 + 0.65 * near;
+    tr[k] = BR[k] * lum; tg[k] = BG[k] * lum; tb[k] = BB[k] * lum;
+    ts[k] = size * p * (0.7 + 0.45 * near);
+  }
+
+  /* ---- Chaos: cubes, spheres and pyramids tumbling in 3D ---- */
+  var CUBE_E = [[-1, -1, -1, 1, -1, -1], [1, -1, -1, 1, 1, -1], [1, 1, -1, -1, 1, -1], [-1, 1, -1, -1, -1, -1],
+                [-1, -1, 1, 1, -1, 1], [1, -1, 1, 1, 1, 1], [1, 1, 1, -1, 1, 1], [-1, 1, 1, -1, -1, 1],
+                [-1, -1, -1, -1, -1, 1], [1, -1, -1, 1, -1, 1], [1, 1, -1, 1, 1, 1], [-1, 1, -1, -1, 1, 1]];
+  var TET_V = [[0.9, 0.9, 0.9], [0.9, -0.9, -0.9], [-0.9, 0.9, -0.9], [-0.9, -0.9, 0.9]];
+  var TET_F = [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]], TET_E = [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]];
+  var SHAPE_SCALE = [0.68, 1, 0.75];      // cube, sphere, pyramid: roughly equal visual size
+  // A point on a unit cube, sphere or tetrahedron: on its surface if filled, on its edges if not.
+  function shape3(kind, filled) {
+    var j = function () { return rnd(-0.04, 0.04); }, f, e, a, b, c, th;
     if (kind === 0) {
-      if (filled) return [rnd(-1, 1), rnd(-1, 1)];
-      t = Math.random() * 4; f = (t % 1) * 2 - 1;
-      return [[f, -1 + j()], [1 + j(), f], [f, 1 + j()], [-1 + j(), f]][t | 0];
+      if (filled) {
+        var ax = (Math.random() * 3) | 0, sd = Math.random() < 0.5 ? -1 : 1, u = rnd(-1, 1), v = rnd(-1, 1);
+        return ax === 0 ? [sd, u, v] : ax === 1 ? [u, sd, v] : [u, v, sd];
+      }
+      e = CUBE_E[(Math.random() * 12) | 0]; f = Math.random();
+      return [e[0] + (e[3] - e[0]) * f + j(), e[1] + (e[4] - e[1]) * f + j(), e[2] + (e[5] - e[2]) * f + j()];
     }
     if (kind === 1) {
-      a = Math.random() * 6.283; r = filled ? Math.sqrt(Math.random()) : 1 + j();
-      return [Math.cos(a) * r, Math.sin(a) * r];
+      th = rnd(0, 6.283);
+      if (filled) { var zz = rnd(-1, 1), rr = Math.sqrt(1 - zz * zz); return [rr * Math.cos(th), rr * Math.sin(th), zz]; }
+      var ring = (Math.random() * 4) | 0;                   // wireframe globe: equator, a latitude, two meridians
+      if (ring === 0) return [Math.cos(th), j(), Math.sin(th)];
+      if (ring === 3) return [Math.cos(th) * 0.7, 0.71, Math.sin(th) * 0.7];
+      var m = ring === 1 ? 0 : 1.571;
+      return [Math.cos(th) * Math.cos(m), Math.sin(th), Math.cos(th) * Math.sin(m)];
     }
-    var P = [[0, -1.1], [0.95, 0.6], [-0.95, 0.6]];
     if (filled) {
-      var u = Math.random(), v = Math.random();
-      if (u + v > 1) { u = 1 - u; v = 1 - v; }
-      return [P[0][0] + (P[1][0] - P[0][0]) * u + (P[2][0] - P[0][0]) * v, P[0][1] + (P[1][1] - P[0][1]) * u + (P[2][1] - P[0][1]) * v];
+      var F = TET_F[(Math.random() * 4) | 0], u2 = Math.random(), v2 = Math.random();
+      if (u2 + v2 > 1) { u2 = 1 - u2; v2 = 1 - v2; }
+      a = TET_V[F[0]]; b = TET_V[F[1]]; c = TET_V[F[2]];
+      return [a[0] + (b[0] - a[0]) * u2 + (c[0] - a[0]) * v2, a[1] + (b[1] - a[1]) * u2 + (c[1] - a[1]) * v2, a[2] + (b[2] - a[2]) * u2 + (c[2] - a[2]) * v2];
     }
-    t = Math.random() * 3; var e = t | 0; f = t % 1;
-    var A = P[e], B = P[(e + 1) % 3];
-    return [A[0] + (B[0] - A[0]) * f + j(), A[1] + (B[1] - A[1]) * f + j()];
+    var pr = TET_E[(Math.random() * 6) | 0]; a = TET_V[pr[0]]; b = TET_V[pr[1]]; f = Math.random();
+    return [a[0] + (b[0] - a[0]) * f + j(), a[1] + (b[1] - a[1]) * f + j(), a[2] + (b[2] - a[2]) * f + j()];
   }
   function initChaos(now) {
     var S = coarse || box.w < 520 ? 9 : 14, m = Math.min(box.w, box.h), shapes = [], i, k, wsum = 0;
     for (i = 0; i < S; i++) {
-      var r = m * rnd(0.05, 0.13), dir = rnd(0, 6.283), spd = rnd(0.25, 0.6) * m / 1000;
+      var r = m * rnd(0.06, 0.13), dir = rnd(0, 6.283), spd = rnd(0.25, 0.6) * m / 1000, kind = i % 3;
       shapes.push({
-        kind: i % 3, filled: Math.random() < 0.4, r: r,
-        x: box.x + rnd(r, box.w - r), y: box.y + rnd(r, box.h - r),
-        vx: Math.cos(dir) * spd, vy: Math.sin(dir) * spd, a: rnd(0, 6.283), va: rnd(-0.004, 0.004),
-        col: CHAOS_COLORS[i % CHAOS_COLORS.length], c: 1, s: 0
+        kind: kind, filled: Math.random() < 0.45, r: r, sc: r * SHAPE_SCALE[kind],
+        x: box.x + rnd(r, box.w - r), y: box.y + rnd(r, box.h - r), vx: Math.cos(dir) * spd, vy: Math.sin(dir) * spd,
+        ax: rnd(0, 6.283), ay: rnd(0, 6.283), az: rnd(0, 6.283),
+        wx: rnd(-0.0018, 0.0018), wy: rnd(-0.0018, 0.0018), wz: rnd(-0.0012, 0.0012),
+        zp: rnd(0, 6.283), zw: rnd(0.0004, 0.0009), z: 0, R: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        col: CHAOS_COLORS[i % CHAOS_COLORS.length]
       });
-      shapes[i].w = r * (shapes[i].filled ? 1.6 : 1); wsum += shapes[i].w;
+      shapes[i].w = r * (shapes[i].filled ? 1.7 : 1); wsum += shapes[i].w;
     }
     k = 0;
     for (i = 0; i < S; i++) {
       var cnt = i === S - 1 ? N - k : Math.round(N * shapes[i].w / wsum);
       for (var q = 0; q < cnt && k < N; q++, k++) {
-        var p = shapePoint(shapes[i].kind, shapes[i].filled);
-        AX[k] = p[0]; AY[k] = p[1]; AG[k] = i;
+        var p = shape3(shapes[i].kind, shapes[i].filled);
+        AX[k] = p[0]; AY[k] = p[1]; AZ[k] = p[2]; AG[k] = i;
         setRGB(k, shapes[i].col[0], shapes[i].col[1], shapes[i].col[2]);
       }
     }
-    for (; k < N; k++) { AX[k] = AY[k] = 0; AG[k] = 0; }
-    anim = { kind: 'chaos', shapes: shapes, last: now, kick: now + 900, base: coarse ? 2 : 2.3, vmax: m * 0.0009 };
+    for (; k < N; k++) { AX[k] = AY[k] = AZ[k] = 0; AG[k] = 0; }
+    anim = { kind: 'chaos', shapes: shapes, last: now, kick: now + 900, base: coarse ? 2 : 2.2, vmax: m * 0.0009,
+             m: m, cx: box.x + box.w / 2, cy: box.y + box.h / 2, F: Math.max(box.w, box.h) * 1.4 };
   }
   function updateChaos(now) {
     var A = anim, sh = A.shapes, dt = Math.min(40, now - A.last), i, j, s;
     A.last = now;
-    if (now > A.kick) {                    // every so often something gets shoved
+    if (now > A.kick) {                    // every so often something gets shoved and set spinning
       s = sh[(Math.random() * sh.length) | 0];
-      s.vx += rnd(-1, 1) * A.vmax * 0.8; s.vy += rnd(-1, 1) * A.vmax * 0.8; s.va += rnd(-0.006, 0.006);
+      s.vx += rnd(-1, 1) * A.vmax * 0.8; s.vy += rnd(-1, 1) * A.vmax * 0.8;
+      s.wx += rnd(-0.002, 0.002); s.wy += rnd(-0.002, 0.002);
       A.kick = now + rnd(450, 1200);
     }
     for (i = 0; i < sh.length; i++) {
       s = sh[i];
       var sp = Math.hypot(s.vx, s.vy);
       if (sp > A.vmax) { s.vx *= A.vmax / sp; s.vy *= A.vmax / sp; }
-      s.va = Math.max(-0.008, Math.min(0.008, s.va));
-      s.x += s.vx * dt; s.y += s.vy * dt; s.a += s.va * dt;
-      if (s.x < box.x + s.r) { s.x = box.x + s.r; s.vx = Math.abs(s.vx); s.va = -s.va; }
-      if (s.x > box.x + box.w - s.r) { s.x = box.x + box.w - s.r; s.vx = -Math.abs(s.vx); s.va = -s.va; }
-      if (s.y < box.y + s.r) { s.y = box.y + s.r; s.vy = Math.abs(s.vy); s.va = -s.va; }
-      if (s.y > box.y + box.h - s.r) { s.y = box.y + box.h - s.r; s.vy = -Math.abs(s.vy); s.va = -s.va; }
+      s.wx = Math.max(-0.004, Math.min(0.004, s.wx)); s.wy = Math.max(-0.004, Math.min(0.004, s.wy));
+      s.x += s.vx * dt; s.y += s.vy * dt; s.ax += s.wx * dt; s.ay += s.wy * dt; s.az += s.wz * dt;
+      s.z = Math.sin(now * s.zw + s.zp) * A.m * 0.3;            // drift nearer and farther
+      if (s.x < box.x + s.r) { s.x = box.x + s.r; s.vx = Math.abs(s.vx); s.wy = -s.wy; }
+      if (s.x > box.x + box.w - s.r) { s.x = box.x + box.w - s.r; s.vx = -Math.abs(s.vx); s.wy = -s.wy; }
+      if (s.y < box.y + s.r) { s.y = box.y + s.r; s.vy = Math.abs(s.vy); s.wx = -s.wx; }
+      if (s.y > box.y + box.h - s.r) { s.y = box.y + box.h - s.r; s.vy = -Math.abs(s.vy); s.wx = -s.wx; }
     }
     for (i = 0; i < sh.length; i++) for (j = i + 1; j < sh.length; j++) {   // bump into each other
       var a = sh[i], b = sh[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, min = (a.r + b.r) * 0.92;
       if (d < min) {
         var nx = dx / d, ny = dy / d, rel = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
-        if (rel > 0) { a.vx -= rel * nx; a.vy -= rel * ny; b.vx += rel * nx; b.vy += rel * ny; a.va += rnd(-0.003, 0.003); b.va += rnd(-0.003, 0.003); }
+        if (rel > 0) { a.vx -= rel * nx; a.vy -= rel * ny; b.vx += rel * nx; b.vy += rel * ny; a.wz += rnd(-0.002, 0.002); b.wz += rnd(-0.002, 0.002); }
         var push = (min - d) / 2; a.x -= nx * push; a.y -= ny * push; b.x += nx * push; b.y += ny * push;
       }
     }
-    for (i = 0; i < sh.length; i++) { sh[i].c = Math.cos(sh[i].a); sh[i].s = Math.sin(sh[i].a); }
+    for (i = 0; i < sh.length; i++) {      // rotation matrix Rz * Ry * Rx
+      s = sh[i];
+      var cx_ = Math.cos(s.ax), sx_ = Math.sin(s.ax), cy_ = Math.cos(s.ay), sy_ = Math.sin(s.ay), cz = Math.cos(s.az), sz = Math.sin(s.az), R = s.R;
+      R[0] = cy_ * cz; R[1] = sx_ * sy_ * cz - cx_ * sz; R[2] = cx_ * sy_ * cz + sx_ * sz;
+      R[3] = cy_ * sz; R[4] = sx_ * sy_ * sz + cx_ * cz; R[5] = cx_ * sy_ * sz - sx_ * cz;
+      R[6] = -sy_;     R[7] = sx_ * cy_;                 R[8] = cx_ * cy_;
+    }
     for (var k = 0; k < N; k++) {
       s = sh[AG[k]];
-      var lx = AX[k] * s.r, ly = AY[k] * s.r;
-      tx[k] = s.x + lx * s.c - ly * s.s; ty[k] = s.y + lx * s.s + ly * s.c; ts[k] = A.base;
+      var R2 = s.R, lx = AX[k], ly = AY[k], lz = AZ[k];
+      var X = (R2[0] * lx + R2[1] * ly + R2[2] * lz) * s.sc, Y = (R2[3] * lx + R2[4] * ly + R2[5] * lz) * s.sc, Z = (R2[6] * lx + R2[7] * ly + R2[8] * lz) * s.sc;
+      var wz = s.z + Z, p = A.F / (A.F + wz);
+      tx[k] = A.cx + (s.x - A.cx + X) * p; ty[k] = A.cy + (s.y - A.cy + Y) * p;
+      var near = clamp01(0.5 - Z / (s.sc * 2.4)), lum = 0.3 + 0.7 * near;   // the side facing you is brighter
+      tr[k] = BR[k] * lum; tg[k] = BG[k] * lum; tb[k] = BB[k] * lum;
+      ts[k] = A.base * p * (0.75 + 0.4 * near);
     }
   }
 
-  /* ---- Photography ---- */
+  /* ---- Photography: a Sony A7 III in 3D ---- */
   var CAM_LOOP = 2600;
   // An arc as line segments, angles in radians (0 = right, clockwise on screen).
   function arcSegs(cx, cy, r, a0, a1, n) {
@@ -489,11 +533,11 @@ footer a:hover{text-decoration:underline}
     }
     return s;
   }
-  // A Sony A7 III seen from the front, in units of its width (127 x 96 mm body):
-  // grip on the left, angular viewfinder hump over an off-centre E-mount.
+  // Front-view outlines in units of body width (127 x 96 mm): grip on the left, angular
+  // viewfinder hump over an off-centre E-mount. The silhouette is extruded to the body's
+  // depth, details sit on the front face, and a lens barrel sticks out toward you.
   function initCamera(now) {
-    var f = fit(1.33), W = f.w * 0.7, k = 0, e;
-    var cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+    var f = fit(1.33), W = f.w * 0.6, k = 0, e, i;
     function sc(segs) { return segs.map(function (s) { return [s[0] * W, s[1] * W, s[2] * W, s[3] * W]; }); }
     var T = -0.187, B = 0.377, G = -0.29, mx = 0.03, my = 0.105, rc = 0.035;
     var body = [[G, T, mx - 0.2, T], [mx - 0.2, T, mx - 0.115, -0.37], [mx - 0.115, -0.377, mx + 0.115, -0.377],
@@ -502,121 +546,142 @@ footer a:hover{text-decoration:underline}
       .concat([[0.5, T + rc, 0.5, B - rc]])
       .concat(arcSegs(0.5 - rc, B - rc, rc, 0, Math.PI / 2, 4))
       .concat([[0.5 - rc, B, G, B]]);
-    var gR = 0.09, gR2 = 0.07, gT = -0.205;                      // the grip, rounded on its outer edge
+    var gR = 0.09, gR2 = 0.07, gT = -0.205;
     var grip = [[G, gT, -0.5 + gR, gT]]
       .concat(arcSegs(-0.5 + gR, gT + gR, gR, -Math.PI / 2, -Math.PI, 8))
       .concat([[-0.5, gT + gR, -0.5, B - gR2]])
       .concat(arcSegs(-0.5 + gR2, B - gR2, gR2, Math.PI, Math.PI / 2, 6))
       .concat([[-0.5 + gR2, B, G, B], [G, gT, G, B]]);
+    var shoe = rectSegs(mx - 0.075, -0.398, mx + 0.075, -0.377);
     var shutter = rectSegs(-0.43, -0.238, -0.34, gT).concat([[-0.445, -0.238, -0.325, -0.238]]);
     var dial = rectSegs(-0.282, -0.232, -0.182, T);
-    for (var x = -0.27; x < -0.19; x += 0.016) dial.push([x, -0.232, x, T]);   // knurled edge
-    var shoe = rectSegs(mx - 0.075, -0.398, mx + 0.075, -0.377);
+    for (var x = -0.27; x < -0.19; x += 0.016) dial.push([x, -0.232, x, T]);
     var lugs = circleSegs(0.513, -0.12, 0.014, 10).concat(circleSegs(-0.513, -0.12, 0.014, 10));
     var release = circleSegs(mx + 0.265, 0.17, 0.02, 14);
-    var mount = circleSegs(mx, my, 0.235, 80).concat(circleSegs(mx, my, 0.2, 72), circleSegs(mx, my, 0.17, 64));
-    var lamp = circleSegs(-0.245, -0.115, 0.02, 14);              // AF-assist lamp: where the burst comes from
-    var nBody = (N * 0.52) | 0, nLamp = (N * 0.04) | 0, nIris = (N * 0.12) | 0, nBlade = (N * 0.1) | 0;
-    onSegments(sc(body.concat(grip, shutter, dial, shoe, lugs, release, mount)), 0, nBody, 1.1);
-    for (; k < nBody; k++) { AR[k] = 0; setRGB(k, 0.94, 0.94, 0.93); }
+    var mount = circleSegs(mx, my, 0.235, 80);
+    var lamp = circleSegs(-0.245, -0.115, 0.02, 14);
+    var D = 0.36, zf = -D / 2 * W, zb = D / 2 * W, zl = zf - 0.3 * W;   // body front, back, lens front
+    var nSil = (N * 0.34) | 0, nDet = (N * 0.12) | 0, nBar = (N * 0.14) | 0, nLamp = (N * 0.03) | 0, nIris = (N * 0.1) | 0, nBlade = (N * 0.08) | 0;
+    onSegments(sc(body.concat(grip, shoe)), 0, nSil, 1.1);
+    for (; k < nSil; k++) {                 // silhouette: front edge, back edge and the walls between
+      var rr = Math.random();
+      AZ[k] = rr < 0.42 ? zf : rr < 0.72 ? zb : rnd(zf, zb); AR[k] = 0; setRGB(k, 0.94, 0.94, 0.93);
+    }
+    onSegments(sc(shutter.concat(dial, lugs, release, mount)), k, nDet, 1);
+    for (e = k + nDet; k < e; k++) { AZ[k] = zf; AR[k] = 0; setRGB(k, 0.94, 0.94, 0.93); }
+    for (e = k + nBar; k < e; k++) {        // lens barrel: front lip, focus ring and its length
+      var a = rnd(0, 6.283), pick = Math.random(), rad, z;
+      if (pick < 0.4) { rad = 0.205; z = zl; }
+      else if (pick < 0.62) { rad = 0.215; z = zf + (zl - zf) * rnd(0.45, 0.6); }
+      else { a = ((Math.random() * 10) | 0) / 10 * 6.283; rad = 0.21; z = rnd(zl, zf); }
+      AX[k] = (mx + Math.cos(a) * rad) * W; AY[k] = (my + Math.sin(a) * rad) * W; AZ[k] = z; AR[k] = 0;
+      setRGB(k, 0.8, 0.82, 0.88);
+    }
     onSegments(sc(lamp), k, nLamp, 0.8);
-    for (e = k + nLamp; k < e; k++) { AR[k] = 4; setRGB(k, 1, 0.78, 0.55); }
+    for (e = k + nLamp; k < e; k++) { AZ[k] = zf; AR[k] = 4; setRGB(k, 1, 0.78, 0.55); }
     for (e = k + nIris; k < e; k++) { AR[k] = 1; AU[k] = Math.random() * 6; setRGB(k, 0.82, 0.88, 1); }
     for (e = k + nBlade; k < e; k++) { AR[k] = 2; AU[k] = Math.random(); AG[k] = (Math.random() * 6) | 0; setRGB(k, 0.7, 0.76, 0.9); }
     for (; k < N; k++) { AR[k] = 3; AU[k] = Math.random(); AG[k] = (Math.random() * 28) | 0; setRGB(k, 1, 0.94, 0.78); }
-    anim = { kind: 'camera', t0: now, cx: cx, cy: cy, mx: mx * W, my: my * W, R2: 0.165 * W, w: W,
-             fx: -0.245 * W, fy: -0.115 * W, base: Math.max(1.6, Math.min(2.6, W / 220)) };
+    anim = { kind: 'camera', t0: now, cx: f.x + f.w / 2, cy: f.y + f.h / 2, mx: mx * W, my: my * W, R2: 0.165 * W,
+             zl: zl, zf: zf, w: W, fx: -0.245 * W, fy: -0.115 * W, F: W * 3, tall: false, zr: W * 0.55,
+             base: Math.max(1.6, Math.min(2.6, W / 200)) };
   }
   function updateCamera(now) {
-    var A = anim, t = (now - A.t0) % CAM_LOOP, close = 0;
+    var A = anim, t = (now - A.t0) % CAM_LOOP, close = 0, el = reduce ? 0 : now - A.t0;
     if (t > 1280 && t < 1370) close = (t - 1280) / 90;            // aperture snaps shut...
     else if (t >= 1370 && t < 1650) close = 1 - (t - 1370) / 280; // ...and reopens
     close = ease(clamp01(close));
-    var fl = t > 1330 && t < 1830 ? (t - 1330) / 500 : -1;        // the flash
-    var recoil = 1 - 0.035 * close, ri = A.R2 * (0.92 - 0.78 * close), rot = close * 0.9;
+    var fl = t > 1330 && t < 1830 ? (t - 1330) / 500 : -1;
+    view3(A, -0.5 + 0.38 * Math.sin(el * 0.0005), -0.16 + 0.08 * Math.sin(el * 0.0004));   // a slow three-quarter turn
+    var kickZ = close * A.w * 0.04, ri = A.R2 * (0.92 - 0.78 * close), rot = close * 0.9;
     for (var k = 0; k < N; k++) {
-      var lx, ly, size = A.base, r = AR[k];
+      var x, y, z, size = A.base, r = AR[k];
       if (r === 0 || r === 4) {
-        lx = AX[k]; ly = AY[k];
+        x = AX[k]; y = AY[k]; z = AZ[k];
         if (r === 4 && fl >= 0) size = A.base * (1 + 2.5 * (1 - fl));
-      } else if (r === 1) {                 // the iris: a hexagon that shrinks as it closes
+      } else if (r === 1) {                 // the iris, at the front of the lens
         var u = AU[k], i = u | 0, f = u - i, a0 = i / 6 * 6.283 + rot, a1 = (i + 1) / 6 * 6.283 + rot;
-        lx = A.mx + (Math.cos(a0) + (Math.cos(a1) - Math.cos(a0)) * f) * ri;
-        ly = A.my + (Math.sin(a0) + (Math.sin(a1) - Math.sin(a0)) * f) * ri;
-      } else if (r === 2) {                 // blade edges from each iris corner out to the lens ring
+        x = A.mx + (Math.cos(a0) + (Math.cos(a1) - Math.cos(a0)) * f) * ri;
+        y = A.my + (Math.sin(a0) + (Math.sin(a1) - Math.sin(a0)) * f) * ri; z = A.zl;
+      } else if (r === 2) {                 // blade edges from each iris corner out to the barrel
         var a = AG[k] / 6 * 6.283 + rot, vx0 = Math.cos(a) * ri, vy0 = Math.sin(a) * ri;
         var ex = Math.cos(a + 1.1) * A.R2, ey = Math.sin(a + 1.1) * A.R2;
-        lx = A.mx + vx0 + (ex - vx0) * AU[k]; ly = A.my + vy0 + (ey - vy0) * AU[k];
-      } else {                              // the burst from the AF-assist lamp
-        if (fl < 0) { lx = A.fx; ly = A.fy; size = 0; }
+        x = A.mx + vx0 + (ex - vx0) * AU[k]; y = A.my + vy0 + (ey - vy0) * AU[k]; z = A.zl;
+      } else {                              // the burst from the AF-assist lamp, flying toward you
+        if (fl < 0) { x = A.fx; y = A.fy; z = A.zf; size = 0; }
         else {
-          var ang = AG[k] / 28 * 6.283, d = AU[k] * A.w * 0.55 * ease(Math.min(1, fl * 1.6));
-          lx = A.fx + Math.cos(ang) * d; ly = A.fy + Math.sin(ang) * d; size = A.base * 1.3 * (1 - fl);
+          var ang = AG[k] / 28 * 6.283, d = AU[k] * A.w * 0.6 * ease(Math.min(1, fl * 1.6));
+          x = A.fx + Math.cos(ang) * d * 0.8; y = A.fy + Math.sin(ang) * d * 0.8; z = A.zf - d * 0.6;
+          size = A.base * 1.3 * (1 - fl);
         }
       }
-      tx[k] = A.cx + lx * recoil; ty[k] = A.cy + ly * recoil; ts[k] = size;
+      put3(A, k, x, y, z + kickZ, size, undefined, A.zr);
     }
   }
 
-  /* ---- Systems ---- */
+  /* ---- Systems: loose dots pulled into a turning 3D network ---- */
   var NET_LOOP = 6000;
   function initNetwork(now) {
-    var sc = 0.84, f = { x: box.x + box.w * (1 - sc) / 2, y: box.y + box.h * (1 - sc) / 2, w: box.w * sc, h: box.h * sc };
-    var tall = f.h > f.w * 1.1, layers = [3, 5, 5, 3], nodes = [], edges = [], start = [0], l, j, k = 0, i;
+    var tall = box.h > box.w * 1.1, len = (tall ? box.h : box.w) * 0.74, cross = Math.min(box.w, box.h);
+    var layers = [4, 6, 6, 4], nodes = [], edges = [], start = [0], l, j, k = 0, i;
     for (l = 0; l < layers.length; l++) {
       start.push(start[l] + layers[l]);
+      var ring = cross * (layers[l] > 4 ? 0.34 : 0.24);
       for (j = 0; j < layers[l]; j++) {
-        var a = (l + 0.5) / layers.length, b = (j + 0.5) / layers[l];
+        var th = j / layers[l] * 6.283 + l * 0.4;
         nodes.push({
-          l: l, lx: tall ? f.x + b * f.w : f.x + a * f.w, ly: tall ? f.y + a * f.h : f.y + b * f.h,
-          hx: box.x + rnd(0.08, 0.92) * box.w, hy: box.y + rnd(0.1, 0.9) * box.h,
-          p: rnd(0, 6.283), q: rnd(0, 6.283), w1: rnd(0.0005, 0.0011), w2: rnd(0.0005, 0.0011), x: 0, y: 0
+          l: l, lx: -len / 2 + (l + 0.5) / layers.length * len, ly: Math.cos(th) * ring, lz: Math.sin(th) * ring,
+          hx: rnd(-0.5, 0.5) * len * 1.1, hy: rnd(-0.42, 0.42) * cross, hz: rnd(-0.4, 0.4) * cross,
+          p: rnd(0, 6.283), q: rnd(0, 6.283), w1: rnd(0.0005, 0.0011), w2: rnd(0.0005, 0.0011), x: 0, y: 0, z: 0
         });
       }
     }
     for (l = 0; l < layers.length - 1; l++)
       for (var a1 = start[l]; a1 < start[l + 1]; a1++)
         for (var b1 = start[l + 1]; b1 < start[l + 2]; b1++) edges.push({ a: a1, b: b1, l: l });
-    var per = Math.floor((N * 0.16) / nodes.length);
+    var per = Math.floor((N * 0.14) / nodes.length);
     for (i = 0; i < nodes.length; i++) for (j = 0; j < per; j++, k++) {
-      var an = Math.random() * 6.283, rr = Math.sqrt(Math.random()) * 5;
-      AR[k] = 0; AG[k] = i; AX[k] = Math.cos(an) * rr; AY[k] = Math.sin(an) * rr; setRGB(k, 0.96, 0.96, 0.95);
+      var p = shape3(1, true), rr = Math.cbrt(Math.random()) * 5;            // each node a small ball of dots
+      AR[k] = 0; AG[k] = i; AX[k] = p[0] * rr; AY[k] = p[1] * rr; AZ[k] = p[2] * rr; setRGB(k, 0.96, 0.96, 0.95);
     }
     var perEdge = (N - k) / edges.length;
     for (var m = 0; k < N; k++, m++) {
-      AR[k] = 1; AG[k] = Math.min(edges.length - 1, (m / perEdge) | 0); AU[k] = Math.random(); AX[k] = rnd(-0.9, 0.9);
-      setRGB(k, 0.3, 0.5, 1);
+      AR[k] = 1; AG[k] = Math.min(edges.length - 1, (m / perEdge) | 0); AU[k] = Math.random();
+      AX[k] = rnd(-0.9, 0.9); AY[k] = rnd(-0.9, 0.9); AZ[k] = rnd(-0.9, 0.9); setRGB(k, 0.3, 0.5, 1);
     }
-    anim = { kind: 'network', t0: now, nodes: nodes, edges: edges, base: 2, ebase: 1.35, R: Math.min(box.w, box.h) * 0.18 };
+    anim = { kind: 'network', t0: now, nodes: nodes, edges: edges, base: 2.1, ebase: 1.35, R: cross * 0.16,
+             cx: box.x + box.w / 2, cy: box.y + box.h / 2, F: len * 1.5, tall: tall, zr: cross * 0.75 };
   }
   function updateNetwork(now) {
-    var A = anim, t = (now - A.t0) % NET_LOOP, nodes = A.nodes, i, k;
+    var A = anim, t = (now - A.t0) % NET_LOOP, el = reduce ? 0 : now - A.t0, nodes = A.nodes, i, k;
     // 0-1.4s loose, 1.4-2.6s pulled into place, connected until 4.8s, then let go
     var m = t < 1400 ? 0 : t < 2600 ? ease((t - 1400) / 1200) : t < 4800 ? 1 : 1 - ease((t - 4800) / 1200);
     for (i = 0; i < nodes.length; i++) {
       var n = nodes[i];
       var chx = n.hx + Math.sin(now * n.w1 + n.p) * A.R, chy = n.hy + Math.cos(now * n.w2 + n.q) * A.R * 0.7;
-      n.x = chx + (n.lx - chx) * m; n.y = chy + (n.ly - chy) * m;
+      var chz = n.hz + Math.sin(now * n.w2 + n.p) * A.R * 0.7;
+      n.x = chx + (n.lx - chx) * m; n.y = chy + (n.ly - chy) * m; n.z = chz + (n.lz - chz) * m;
     }
-    var wave = t >= 2600 && t < 4800 ? (t - 2600) / 650 : -9;       // signal travelling layer to layer
+    // the rings turn about the network's long axis while the whole thing sways
+    view3(A, 0.35 * Math.sin(el * 0.0002), 0);
+    var cR = Math.cos(el * 0.0003), sR = Math.sin(el * 0.0003);
+    for (i = 0; i < nodes.length; i++) { var nn = nodes[i], yy = nn.y * cR - nn.z * sR; nn.z = nn.y * sR + nn.z * cR; nn.y = yy; }
+    var wave = t >= 2600 && t < 4800 ? (t - 2600) / 650 : -9;
     for (k = 0; k < N; k++) {
       if (AR[k] === 0) {
         var nd = nodes[AG[k]], ph = ((wave - nd.l) % 2.6 + 2.6) % 2.6;
-        tx[k] = nd.x + AX[k]; ty[k] = nd.y + AY[k];
-        ts[k] = A.base * (wave > -9 && ph < 0.25 ? 1.8 : 1);       // a node lights up as the signal arrives
+        put3(A, k, nd.x + AX[k], nd.y + AY[k], nd.z + AZ[k], A.base * (wave > -9 && ph < 0.25 ? 1.8 : 1), undefined, A.zr);
       } else {
         var e = A.edges[AG[k]], na = nodes[e.a], nb = nodes[e.b], u = AU[k];
         var g = t < 1500 ? 0 : t < 4800 ? clamp01((t - 1500 - e.l * 260) / 520) : 1 - clamp01((t - 4800) / 700);
         if (u <= g) {
-          var dx = nb.x - na.x, dy = nb.y - na.y, len = Math.hypot(dx, dy) || 1;
-          tx[k] = na.x + dx * u - dy / len * AX[k]; ty[k] = na.y + dy * u + dx / len * AX[k];
           var s = A.ebase;
           if (wave > -9) {
             var q = ((wave - e.l) % 2.6 + 2.6) % 2.6;
             if (q <= 1) { var dd = u - q; s *= 1 + 2.4 * Math.exp(-dd * dd / 0.003); }
           }
-          ts[k] = s;
-        } else { tx[k] = na.x; ty[k] = na.y; ts[k] = 0; }   // not drawn yet: wait at its starting node
+          put3(A, k, na.x + (nb.x - na.x) * u + AX[k], na.y + (nb.y - na.y) * u + AY[k], na.z + (nb.z - na.z) * u + AZ[k], s, undefined, A.zr);
+        } else { put3(A, k, na.x, na.y, na.z, 0, undefined, A.zr); }   // not drawn yet: wait at its starting node
       }
     }
   }
