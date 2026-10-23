@@ -73,17 +73,19 @@ a{color:inherit}
 /* Systems schematic labels, laid over the dots */
 .schem{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .3s}
 .schem.on{opacity:1;transition-delay:.5s}
-.sx{position:absolute;display:grid;gap:4px;font:500 12px/1.15 var(--sans);color:var(--ink)}
-.sx-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sx-meter{position:relative;height:3px;border-radius:2px;background:#232323;overflow:hidden}
+.sx-board{position:absolute;width:min(360px,84%);transform:translateX(-50%) perspective(700px) rotateX(22deg);transform-origin:50% 0;text-align:center}
+.sx-face{display:grid;gap:7px;justify-items:center}
+.sx-face.flip{animation:sxflip .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes sxflip{from{transform:perspective(600px) rotateX(-95deg);opacity:0}to{transform:none;opacity:1}}
+.sx-name{font-family:var(--dot);font-variation-settings:"ROND" 100;font-weight:900;font-size:clamp(20px,2.6vw,32px);line-height:1;color:var(--ink);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.sx-meter{position:relative;width:min(220px,100%);height:4px;border-radius:2px;background:#232323;overflow:hidden}
 .sx-meter i{position:absolute;top:0;bottom:0;left:0;border-radius:2px}
-.sx-st{font-size:11px}
-.sx.done .sx-meter i{width:100%;background:#57f287}.sx.done .sx-st{color:#57f287}
-.sx.almost .sx-meter i{width:86%;background:#ffc53d}.sx.almost .sx-st{color:#ffc53d}
-.sx.progress .sx-meter i{width:38%;background:#4cc9ff;animation:sxrun 1.3s ease-in-out infinite}.sx.progress .sx-st{color:#4cc9ff}
+.sx-st{font:500 12px/1 var(--sans)}
+.sx-board.done .sx-meter i{width:100%;background:#57f287}.sx-board.done .sx-st{color:#57f287}
+.sx-board.almost .sx-meter i{width:86%;background:#ffc53d}.sx-board.almost .sx-st{color:#ffc53d}
+.sx-board.progress .sx-meter i{width:38%;background:#4cc9ff;animation:sxrun 1.3s ease-in-out infinite}.sx-board.progress .sx-st{color:#4cc9ff}
 @keyframes sxrun{0%{left:-38%}100%{left:100%}}
-@media (max-width:760px){ .sx{font-size:10.5px;gap:3px} .sx-st{font-size:10px} }
-@media (prefers-reduced-motion:reduce){ .sx.progress .sx-meter i{animation:none;width:60%} }
+@media (prefers-reduced-motion:reduce){ .sx-board.progress .sx-meter i{animation:none;width:60%} .sx-face.flip{animation:none} }
 .drop{position:fixed;inset:12px;z-index:50;display:none;place-items:center;text-align:center;border:1px dashed var(--ink);background:rgba(0,0,0,.72);font-size:clamp(34px,6vw,84px);line-height:1;padding:24px}
 .drop.on{display:grid}
 
@@ -634,11 +636,11 @@ footer a:hover{text-decoration:underline}
     }
   }
 
-  /* ---- Systems: a live schematic of the work ----
-     Traces draw in, a chip appears for every project, and signal pulses hop along
-     the traces in steps and light each chip's status LED when they arrive. The
-     labels and meters beside the chips are HTML laid over the canvas (#schem).
-     Status is Jason's: done, almost or progress. */
+  /* ---- Systems: a 3D carousel of the work ----
+     A ring of chips, one per project, wired to a central spine. It turns step by
+     step, stopping with one project at the front, where its chip lights up and a
+     single board under the ring shows its name, meter and status. Signal pulses
+     hop out along the traces and flash each chip's status LED. */
   var PROJECTS = [
     { name: 'Flick Systems', status: 'progress' },
     { name: 'Chaos portfolio', status: 'progress' },
@@ -660,101 +662,92 @@ footer a:hover{text-decoration:underline}
     almost:   { label: 'Almost',      rgb: [1, 0.77, 0.24] },
     progress: { label: 'In progress', rgb: [0.3, 0.79, 1] }
   };
-  var SCHEM_LOOP = 2400, SCHEM_STEPS = 18;
-  var schemEl = document.getElementById('schem');
-  function schemLabels(cells) {
-    if (!schemEl) return;
-    if (!schemEl.children.length) {
-      PROJECTS.forEach(function (p) {
-        var el = document.createElement('div');
-        el.className = 'sx ' + p.status;
-        el.innerHTML = '<span class="sx-name"></span><span class="sx-meter"><i></i></span><span class="sx-st"></span>';
-        el.children[0].textContent = p.name;
-        el.children[2].textContent = STATUS[p.status].label;
-        schemEl.appendChild(el);
-      });
-    }
-    cells.forEach(function (c, i) {
-      var s = schemEl.children[i].style;
-      s.left = c.lx + 'px'; s.top = (c.my - 15) + 'px'; s.width = Math.max(40, c.lw) + 'px';
-    });
+  var SCHEM_STEP = 1700, SCHEM_TURN = 520, SCHEM_LOOP = 2200, SCHEM_STEPS = 10;
+  var schemEl = document.getElementById('schem'), board = null, boardShown = -1;
+  function proj3(A, x, y, z) {               // same maths as put3, returning screen x, y, scale, depth
+    var x2 = x * A.cY - z * A.sY, z2 = x * A.sY + z * A.cY, y3 = y * A.cP - z2 * A.sP, z3 = y * A.sP + z2 * A.cP, p = A.F / (A.F + z3);
+    return [A.cx + x2 * p, A.cy + y3 * p, p, z3];
+  }
+  function showOnBoard(i) {
+    if (!board || boardShown === i) return;
+    boardShown = i;
+    var p = PROJECTS[i];
+    board.className = 'sx-board ' + p.status;
+    board.querySelector('.sx-name').textContent = p.name;
+    board.querySelector('.sx-st').textContent = STATUS[p.status].label;
+    var face = board.querySelector('.sx-face');
+    face.classList.remove('flip'); void face.offsetWidth; face.classList.add('flip');   // restart the flip
   }
   function initSchematic(now) {
-    var n = PROJECTS.length, cols = W >= 1100 ? 5 : W >= 700 ? 4 : 2, rows = Math.ceil(n / cols);
-    var left = box.x + 6, top = box.y + 16, w = box.w - 12, h = box.h - 20;
-    var cw = w / cols, ch = h / rows, s = Math.max(12, Math.min(30, ch * 0.5)), busY = box.y + 4;
-    var traces = [[left, busY, left + (cols - 1) * cw + 4, busY]], chips = [], cells = [], i, k = 0, e;
-    var lastRow = [];
-    for (i = 0; i < n; i++) {
-      var col = i % cols, row = (i / cols) | 0, x0 = left + col * cw, my = top + row * ch + ch * 0.5;
-      var bx = x0 + 4, cl = x0 + 16, ct = my - s / 2, cr = cl + s, cb = my + s / 2;
-      lastRow[col] = my;
-      traces.push([bx, my, cl, my]);                                   // stub from the column bus to the chip
-      chips.push.apply(chips, rectSegs(cl, ct, cr, cb));
-      chips.push.apply(chips, rectSegs(cl + s * 0.3, ct + s * 0.3, cr - s * 0.3, cb - s * 0.3));   // the die
-      for (var q = 1; q <= 3; q++) {                                   // pins along the top and bottom
-        var px_ = cl + s * q / 4;
-        chips.push([px_, ct, px_, ct - s * 0.22], [px_, cb, px_, cb + s * 0.22]);
-      }
-      chips.push([cr, my, cr + s * 0.25, my]);
-      cells.push({ bx: bx, cl: cl, cr: cr, ct: ct, my: my, s: s, lx: cr + s * 0.25 + 8, lw: x0 + cw - (cr + s * 0.25 + 8) - 8,
-                   path: [[left, busY], [bx, busY], [bx, my], [cl, my]] });
+    var n = PROJECTS.length, R = Math.min(box.w * 0.4, box.h * 0.95), s = Math.max(14, Math.min(34, R * 0.14));
+    var ringY = -box.h * 0.08, chips = [], i, k = 0, e;
+    for (i = 0; i < n; i++) chips.push({ th: i / n * 6.283, x: 0, z: 0, tx: 0, tz: 0, front: 0 });
+    var nSpine = (N * 0.04) | 0, nBus = (N * 0.09) | 0, nSpoke = (N * 0.19) | 0, nChip = (N * 0.44) | 0, nLed = (N * 0.07) | 0;
+    for (; k < nSpine; k++) { AR[k] = 0; AX[k] = rnd(-1, 1); AY[k] = rnd(ringY - box.h * 0.22, ringY + box.h * 0.04); AZ[k] = rnd(-1, 1); setRGB(k, 0.3, 0.5, 1); }
+    for (e = k + nBus; k < e; k++) { AR[k] = 1; AU[k] = rnd(0, 6.283); AG[k] = Math.random() < 0.6 ? 0 : 1; setRGB(k, 0.22, 0.42, 0.95); }
+    for (e = k + nSpoke; k < e; k++) { AR[k] = 2; AG[k] = k % n; AU[k] = Math.random(); AX[k] = rnd(-0.8, 0.8); AY[k] = rnd(-0.8, 0.8); setRGB(k, 0.22, 0.42, 0.95); }
+    // one chip drawing in local (across, down) coordinates, shared by every chip
+    var h = s / 2, segs = rectSegs(-h, -h, h, h).concat(rectSegs(-h * 0.4, -h * 0.4, h * 0.4, h * 0.4));
+    for (var q = -1; q <= 1; q++) segs.push([q * h * 0.5, -h, q * h * 0.5, -h * 1.45], [q * h * 0.5, h, q * h * 0.5, h * 1.45]);
+    onSegments(segs, k, nChip, 0.5);
+    for (e = k + nChip; k < e; k++) { AR[k] = 3; AG[k] = k % n; setRGB(k, 0.92, 0.93, 0.95); }
+    for (e = k + nLed; k < e; k++) {
+      var pi = k % n, a = rnd(0, 6.283), rr = Math.sqrt(Math.random()) * s * 0.1, c0 = STATUS[PROJECTS[pi].status].rgb;
+      AR[k] = 4; AG[k] = pi; AX[k] = h * 0.62 + Math.cos(a) * rr; AY[k] = -h * 0.62 + Math.sin(a) * rr; setRGB(k, c0[0], c0[1], c0[2]);
     }
-    for (i = 0; i < cols && i < n; i++) traces.push([left + i * cw + 4, busY, left + i * cw + 4, lastRow[i]]);   // column buses
-    cells.forEach(function (c) {                                       // path lengths for the pulses
-      c.seg = []; c.len = 0;
-      for (var j = 1; j < c.path.length; j++) { var L = Math.hypot(c.path[j][0] - c.path[j - 1][0], c.path[j][1] - c.path[j - 1][1]); c.seg.push(L); c.len += L; }
-    });
-    var nTr = (N * 0.36) | 0, nChip = (N * 0.4) | 0, nLed = (N * 0.08) | 0;
-    onSegments(traces, 0, nTr, 0.5);
-    for (; k < nTr; k++) { AR[k] = 0; setRGB(k, 0.22, 0.42, 0.95); }
-    onSegments(chips, k, nChip, 0.6);
-    for (e = k + nChip; k < e; k++) { AR[k] = 1; setRGB(k, 0.92, 0.93, 0.95); }
-    for (e = k + nLed; k < e; k++) {                                   // a status LED in each chip's corner
-      var pi = k % n, c0 = cells[pi], a = rnd(0, 6.283), rr = Math.sqrt(Math.random()) * c0.s * 0.11, col0 = STATUS[PROJECTS[pi].status].rgb;
-      AR[k] = 2; AG[k] = pi; AX[k] = c0.cr - c0.s * 0.2 + Math.cos(a) * rr; AY[k] = c0.ct + c0.s * 0.2 + Math.sin(a) * rr;
-      setRGB(k, col0[0], col0[1], col0[2]);
+    for (; k < N; k++) { AR[k] = 5; AG[k] = k % n; AX[k] = rnd(-1.5, 1.5); AY[k] = rnd(-1.5, 1.5); AZ[k] = rnd(-1.5, 1.5); setRGB(k, 0.78, 0.93, 1); }
+    anim = { kind: 'schematic', t0: now, chips: chips, R: R, s: s, ringY: ringY, n: n, cx: box.x + box.w / 2, cy: box.y + box.h * 0.42,
+             F: R * 3.2, tall: false, zr: R * 1.3, base: Math.max(1.4, Math.min(2.2, s / 14)) };
+    view3(anim, 0, box.h > box.w ? 0.62 : 0.38);   // tip it further toward you on tall screens so it fills the height
+    if (schemEl && !board) {
+      schemEl.innerHTML = '<div class="sx-board"><div class="sx-face"><span class="sx-name"></span>' +
+                          '<span class="sx-meter"><i></i></span><span class="sx-st"></span></div></div>';
+      board = schemEl.firstChild;
     }
-    for (; k < N; k++) {                                               // signal pulses, one stream per project
-      AR[k] = 3; AG[k] = k % n; AX[k] = rnd(-1.6, 1.6); AY[k] = rnd(-1.6, 1.6); AU[k] = Math.random() < 0.5 ? 0 : 0.5;
-      setRGB(k, 0.75, 0.92, 1);
-    }
-    anim = { kind: 'schematic', t0: now, cells: cells, x0: box.x, w: box.w, base: Math.max(1.4, Math.min(2.2, s / 13)) };
-    schemLabels(cells);
-  }
-  function pathAt(c, f) {                                              // a point a fraction f along a cell's pulse path
-    var d = f * c.len, j = 0;
-    while (j < c.seg.length - 1 && d > c.seg[j]) { d -= c.seg[j]; j++; }
-    var a = c.path[j], b = c.path[j + 1], u = c.seg[j] ? Math.min(1, d / c.seg[j]) : 0;
-    return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+    // leave room under the front chip (pins included, at its enlarged size) for the board
+    var fb = proj3(anim, 0, ringY + s, -R), over = fb[1] + 74 - (box.y + box.h);
+    if (over > 0) { anim.cy -= over; fb = proj3(anim, 0, ringY + s, -R); }
+    if (board) { board.style.left = anim.cx + 'px'; board.style.top = (fb[1] + 12) + 'px'; }
+    boardShown = -1;
   }
   function updateSchematic(now) {
-    var A = anim, t = reduce ? 4000 : now - A.t0, k, cells = A.cells, n = cells.length, i;
-    var arrive = [];                                                   // where each pulse is, and whether it just landed
+    var A = anim, t = now - A.t0, n = A.n, k, i, c;
+    // turn one step, hold, turn the next: the project at index `at` faces you
+    var stepT = reduce ? 0 : t, idx = Math.floor(stepT / SCHEM_STEP), into = stepT - idx * SCHEM_STEP;
+    var turn = idx + ease(Math.min(1, into / SCHEM_TURN)), at = (idx + (into > SCHEM_TURN * 0.5 ? 1 : 0)) % n;
+    var yaw = Math.PI / 2 - turn * 6.283 / n;   // puts chip `turn` straight toward you
     for (i = 0; i < n; i++) {
-      var ph = (t - 900 - i * 170) / SCHEM_LOOP, q = ph - Math.floor(ph);
-      arrive.push({ q: q, on: ph > 0, hit: ph > 0 && q > 0.9 });
+      c = A.chips[i];
+      var th = c.th + yaw;                   // chip i sits at angle i/n of the ring, turned by yaw
+      c.x = Math.cos(th) * A.R; c.z = -Math.sin(th) * A.R; c.tx = Math.sin(th); c.tz = Math.cos(th);
+      c.front = clamp01(-c.z / A.R);         // 1 at the very front
     }
+    showOnBoard(at);
+    var g = clamp01((t - 150) / 650);        // traces draw outward from the spine first
     for (k = 0; k < N; k++) {
-      var r = AR[k];
-      if (r === 0 || r === 1) {                                        // traces and chips draw in left to right
-        var reveal = clamp01((t - (AX[k] - A.x0) / A.w * 700 - (r === 1 ? 250 : 0)) / 250);
-        tx[k] = AX[k]; ty[k] = AY[k]; ts[k] = A.base * (r === 0 ? 0.85 : 1) * reveal;
-      } else if (r === 2) {
-        var p = PROJECTS[AG[k]].status, pr = arrive[AG[k]], lv;
-        if (p === 'done') lv = 1;
-        else if (p === 'almost') lv = 0.55 + 0.45 * Math.sin(t * 0.004);
-        else lv = Math.floor(t / 180 + AG[k]) % 2 ? 1.4 : 0.35;      // in progress: busy blinking
-        if (pr.hit) lv = 1.9;                                          // a pulse just landed
-        tx[k] = AX[k]; ty[k] = AY[k]; ts[k] = t > 900 ? A.base * 1.4 * lv : 0;
-      } else {
-        var c = cells[AG[k]], pp = arrive[AG[k]];
-        var extra = PROJECTS[AG[k]].status === 'progress' ? AU[k] : 0;          // busier projects carry two pulses
-        var q2 = pp.q + extra; q2 -= Math.floor(q2);
-        var stepped = Math.floor(q2 * SCHEM_STEPS) / SCHEM_STEPS;                // hop in steps: do-do-do-do
-        var pt = pathAt(c, stepped);
-        tx[k] = pt[0] + AX[k]; ty[k] = pt[1] + AY[k];
-        ts[k] = pp.on && (extra === 0 || PROJECTS[AG[k]].status === 'progress') ? A.base * 1.5 : 0;
+      var r = AR[k], size, x, y, z;
+      if (r === 0) { put3(A, k, AX[k], AY[k], AZ[k], A.base * 0.9 * g, undefined, A.zr); continue; }
+      if (r === 1) {                         // ring traces at two radii
+        var ang = AU[k] + yaw, rad = A.R * (AG[k] ? 0.82 : 0.45) * g;
+        put3(A, k, Math.cos(ang) * rad, A.ringY, -Math.sin(ang) * rad, A.base * 0.8, undefined, A.zr); continue;
+      }
+      c = A.chips[AG[k]];
+      var hl = 1 + 0.35 * Math.pow(c.front, 6) * (AG[k] === at ? 1 : 0);   // the chip at the front swells
+      if (r === 2) {
+        var u = AU[k], vis = u <= g;
+        put3(A, k, c.x * u * 0.94 + AX[k], A.ringY + AY[k], c.z * u * 0.94, vis ? A.base * 0.85 : 0, undefined, A.zr);
+      } else if (r === 3 || r === 4) {
+        x = c.x + AX[k] * c.tx * hl; y = A.ringY + AY[k] * hl; z = c.z + AX[k] * c.tz * hl;
+        if (r === 3) size = A.base * (g > 0.6 ? 1 : 0) * (AG[k] === at ? 1.25 : 1);
+        else {
+          var p = PROJECTS[AG[k]].status, lv = p === 'done' ? 1 : p === 'almost' ? 0.55 + 0.45 * Math.sin(t * 0.004) : (Math.floor(t / 180 + AG[k]) % 2 ? 1.4 : 0.35);
+          if (AG[k] === at) lv *= 1.5;
+          size = t > 700 ? A.base * 1.4 * lv : 0;
+        }
+        put3(A, k, x, y, z, size, undefined, A.zr);
+      } else {                               // pulses hop from the spine out to each chip: do-do-do
+        var ph = (t - 700 - AG[k] * 150) / SCHEM_LOOP, qq = ph - Math.floor(ph), st = Math.floor(qq * SCHEM_STEPS) / SCHEM_STEPS;
+        put3(A, k, c.x * st * 0.94 + AX[k], A.ringY + AY[k], c.z * st * 0.94 + AZ[k], ph > 0 ? A.base * (AG[k] === at ? 1.9 : 1.4) : 0, undefined, A.zr);
       }
     }
   }
