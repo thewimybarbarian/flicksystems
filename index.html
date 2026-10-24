@@ -86,6 +86,14 @@ a{color:inherit}
 .sx-board.progress .sx-meter i{width:38%;background:#4cc9ff;animation:sxrun 1.3s ease-in-out infinite}.sx-board.progress .sx-st{color:#4cc9ff}
 @keyframes sxrun{0%{left:-38%}100%{left:100%}}
 @media (prefers-reduced-motion:reduce){ .sx-board.progress .sx-meter i{animation:none;width:60%} .sx-face.flip{animation:none} }
+/* hacker texture: faint flickering scanlines, a terminal cursor, and text that tears during glitches */
+.hero::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px);animation:scanflick 7s steps(1) infinite}
+@keyframes scanflick{0%,100%{opacity:1}46%{opacity:.55}47%{opacity:1}81%{opacity:.75}82%{opacity:1}}
+.hint::after{content:"\258C";margin-left:3px;color:var(--ink);animation:caret 1.05s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+.hero.glitching .brand,.hero.glitching .ch-name,.hero.glitching .sx-name{text-shadow:-2px 0 rgba(255,40,90,.85),2px 0 rgba(0,240,255,.85);transform:translateX(var(--gx,0))}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){ .hero::after,.hint::after{animation:none} }
 .drop{position:fixed;inset:12px;z-index:50;display:none;place-items:center;text-align:center;border:1px dashed var(--ink);background:rgba(0,0,0,.72);font-size:clamp(34px,6vw,84px);line-height:1;padding:24px}
 .drop.on{display:grid}
 
@@ -152,7 +160,8 @@ footer a:hover{text-decoration:underline}
     </div>
   </div>
 
-  <p class="hint" id="hint" aria-live="polite"></p>
+  <p class="hint" id="hint" aria-hidden="true"></p>
+  <span class="sr-only" id="hint-sr" aria-live="polite"></span>
 
   <nav class="channels" aria-label="Channels">
     <a class="ch" data-channel="systems" href="#systems">
@@ -252,7 +261,28 @@ footer a:hover{text-decoration:underline}
   var coarse = matchMedia('(pointer: coarse)').matches;
   var HINT = coarse ? 'Tap the dots to scatter them.'
                     : 'Click the dots to scatter them. Drop an image or video anywhere to redraw them.';
-  function hint(msg) { hintEl.textContent = msg; }
+  var hintTimer = 0;
+  function hint(msg) {                      // types out like a terminal; screen readers get the whole line at once
+    var sr = document.getElementById('hint-sr'); if (sr) sr.textContent = msg;
+    clearTimeout(hintTimer);
+    if (reduce || !msg) { hintEl.textContent = msg; return; }
+    var n = 0;
+    (function type() { n += 2; hintEl.textContent = msg.slice(0, n); if (n < msg.length) hintTimer = setTimeout(type, 16); })();
+  }
+  var SCRAMBLE = '!<>-_\\/[]{}=+*^?#%&$01';
+  function scramble(el, ms) {               // the text decodes out of random symbols, left to right
+    if (!el) return;
+    var text = el.dataset.txt || (el.dataset.txt = el.textContent);
+    if (reduce) { el.textContent = text; return; }
+    var t0 = performance.now(), dur = ms || 520, id = (el._scr = (el._scr || 0) + 1);
+    (function step() {
+      if (el._scr !== id) return;
+      var pr = Math.min(1, (performance.now() - t0) / dur), shown = Math.floor(text.length * pr), out = text.slice(0, shown);
+      for (var i = shown; i < text.length; i++) out += text[i] === ' ' ? ' ' : SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0];
+      el.textContent = out;
+      if (pr < 1) setTimeout(step, 30);
+    })();
+  }
   var CH_HINT = coarse
     ? { chaos: 'Tap to blast the shapes apart.', photography: 'Tap to take a shot.', systems: 'Tap for the next project.' }
     : { chaos: 'Knock the shapes around with your cursor. Click to blast them apart.',
@@ -270,8 +300,8 @@ footer a:hover{text-decoration:underline}
 
   var VS =
     'attribute vec2 p;attribute vec3 c;attribute float s;' +
-    'uniform vec2 res;uniform float dpr;varying vec3 vc;' +
-    'void main(){vec2 z=p/res*2.0-1.0;gl_Position=vec4(z.x,-z.y,0.0,1.0);gl_PointSize=s*dpr;vc=c;}';
+    'uniform vec2 res;uniform float dpr;uniform vec2 off;varying vec3 vc;' +
+    'void main(){vec2 z=(p+off)/res*2.0-1.0;gl_Position=vec4(z.x,-z.y,0.0,1.0);gl_PointSize=s*dpr;vc=c;}';
   var FS =
     'precision mediump float;varying vec3 vc;uniform float gain;' +
     'void main(){float r=length(gl_PointCoord-0.5);float a=1.0-smoothstep(0.30,0.5,r);if(a<=0.0)discard;gl_FragColor=vec4(vc*a*gain,a);}';
@@ -302,6 +332,7 @@ footer a:hover{text-decoration:underline}
   uRes = gl.getUniformLocation(prog, 'res');
   uDpr = gl.getUniformLocation(prog, 'dpr');
   uGain = gl.getUniformLocation(prog, 'gain');
+  var uOff = gl.getUniformLocation(prog, 'off');
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE); // additive: dense dots bloom like phosphor
   gl.clearColor(0, 0, 0, 1);
@@ -642,6 +673,8 @@ footer a:hover{text-decoration:underline}
     if (t > 1280 && t < 1370) close = (t - 1280) / 90;            // aperture snaps shut...
     else if (t >= 1370 && t < 1650) close = 1 - (t - 1370) / 280; // ...and reopens
     close = ease(clamp01(close));
+    if (t >= 1280 && !A.shotGlitch) { A.shotGlitch = true; glitchNow(2); }   // every shot tears the signal
+    if (t < 1280) A.shotGlitch = false;
     var fl = t > 1330 && t < 1830 ? (t - 1330) / 500 : -1;
     var wantY = -0.5 + 0.38 * Math.sin(el * 0.0005), wantP = -0.16 + 0.08 * Math.sin(el * 0.0004);   // a slow three-quarter turn...
     if (ptr.on && !overNav && !reduce) {   // ...or aim the lens at the cursor
@@ -713,7 +746,7 @@ footer a:hover{text-decoration:underline}
     boardShown = i;
     var p = PROJECTS[i];
     board.className = 'sx-board ' + p.status;
-    board.querySelector('.sx-name').textContent = p.name;
+    var nm = board.querySelector('.sx-name'); nm.dataset.txt = p.name; nm.textContent = p.name; scramble(nm, 480);
     board.querySelector('.sx-st').textContent = STATUS[p.status].label;
     var face = board.querySelector('.sx-face');
     face.classList.remove('flip'); void face.offsetWidth; face.classList.add('flip');   // restart the flip
@@ -1020,8 +1053,8 @@ footer a:hover{text-decoration:underline}
   function leave() { leaveTimer = setTimeout(function () { setPreview(null); }, 90); }
   links.forEach(function (l) {
     var n = l.dataset.channel;
-    l.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'touch') { stopCycle(); setPreview(n); } });
-    l.addEventListener('focus', function () { stopCycle(); setPreview(n); });
+    l.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'touch') { stopCycle(); setPreview(n); scramble(l.querySelector('.ch-name'), 420); } });
+    l.addEventListener('focus', function () { stopCycle(); setPreview(n); scramble(l.querySelector('.ch-name'), 420); });
     l.addEventListener('blur', leave);
   });
   // A rolled-over channel stays on so you can move up into it and play; it lets go
@@ -1069,6 +1102,7 @@ footer a:hover{text-decoration:underline}
     if (reduce) return;
     var r = hero.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, now = performance.now();
     var cs = current && SOURCES[current];
+    glitchNow(current === 'photography' ? 2 : current === 'chaos' ? 1.7 : 1.2);
     if (cs && cs.type === 'anim' && cs.fn !== 'word3d' && anim && anim.click) {
       anim.click(x, y, now);
       if (coarse) { stopCycle(); clearTimeout(resumeCycle); resumeCycle = setTimeout(startCycle, 8000); }
@@ -1150,6 +1184,17 @@ footer a:hover{text-decoration:underline}
     resetBtn.hidden = true; home = defaultHome; hint(HINT); apply(true, 600);
   });
 
+  /* ---------------- glitch ---------------- */
+  var GL = { next: 0, until: 0, split: 0, bands: [], on: false };
+  function glitchNow(strength) {           // a short burst; bigger strength = longer, wider tears
+    if (reduce) return;
+    var k = strength || 1, now = performance.now();
+    GL.until = now + rnd(90, 200) * k; GL.split = rnd(2, 6) * k; GL.bands = [];
+    for (var b = 0, nb = 1 + ((Math.random() * 3 * k) | 0); b < nb; b++)
+      GL.bands.push({ y: rnd(0, H), h: rnd(6, 46 * k), dx: (Math.random() < 0.5 ? -1 : 1) * rnd(10, 60 * k), j: 1 });
+    hero.style.setProperty('--gx', (Math.random() < 0.5 ? -1 : 1) * rnd(1, 4 * k) + 'px');
+  }
+
   /* ---------------- loop ---------------- */
   var running = false, raf = 0, inView = true;
   function frame(now) {
@@ -1164,6 +1209,13 @@ footer a:hover{text-decoration:underline}
     // Cursor sphere: a dark ball the dots flow around in 3D. It grows and shrinks smoothly.
     lens += ((ptr.on && !overNav && !reduce ? 1 : 0) - lens) * 0.14;
     var R = Math.min(coarse ? LENS_TOUCH : LENS, Math.min(W, H) * 0.24) * lens, R2 = R * R, useP = lens > 0.01 && !(src && src.type === 'anim' && src.fn !== 'word3d');
+    if (!reduce && now > GL.next) {
+      var hot = current === 'chaos' || current === 'photography';
+      glitchNow(hot ? 1.35 : 1);
+      GL.next = now + (hot ? rnd(700, 2000) : current === 'systems' ? rnd(2000, 4500) : rnd(2500, 6000));
+    }
+    var glitching = now < GL.until;
+    if (glitching !== GL.on) { GL.on = glitching; hero.classList.toggle('glitching', glitching); }
     var KS = (src && src.k) || 0.055;
     for (var i = 0, o = 0; i < N; i++, o += 6) {
       var k = KS, w = now - wake[i];
@@ -1209,12 +1261,27 @@ footer a:hover{text-decoration:underline}
         if (tw > 0.97) lit += (tw - 0.97) * 18; // brief glint near the crest, about 1 dot in 14 at any moment
       }
       lit *= Math.min(1.5, lm);
+      if (glitching) {                       // slice tears: bands of dots jump sideways
+        for (var gb = 0; gb < GL.bands.length; gb++) {
+          var band = GL.bands[gb];
+          if (py[i] > band.y && py[i] < band.y + band.h) wx += band.dx * band.j;
+        }
+      }
       data[o] = px[i] + wx; data[o + 1] = py[i] + wy; data[o + 2] = cr[i] * lit; data[o + 3] = cg[i] * lit; data[o + 4] = cb[i] * lit; data[o + 5] = sz[i] * lm;
     }
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform2f(uRes, W, H); gl.uniform1f(uDpr, DPR); gl.uniform1f(uGain, 0.9);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
-    gl.drawArrays(gl.POINTS, 0, N);
+    if (glitching) {                         // RGB split: red, green and blue drawn apart
+      var gsp = GL.split * (0.6 + Math.random() * 0.8);
+      gl.colorMask(true, false, false, true); gl.uniform2f(uOff, gsp, 0); gl.drawArrays(gl.POINTS, 0, N);
+      gl.colorMask(false, true, false, true); gl.uniform2f(uOff, 0, 0); gl.drawArrays(gl.POINTS, 0, N);
+      gl.colorMask(false, false, true, true); gl.uniform2f(uOff, -gsp, gsp * 0.3); gl.drawArrays(gl.POINTS, 0, N);
+      gl.colorMask(true, true, true, true); gl.uniform2f(uOff, 0, 0);
+      for (var gj = 0; gj < GL.bands.length; gj++) GL.bands[gj].j = 0.5 + Math.random();   // jitter next frame
+    } else {
+      gl.uniform2f(uOff, 0, 0); gl.drawArrays(gl.POINTS, 0, N);
+    }
   }
   function tick() {
     running = inView && !document.hidden;
@@ -1262,6 +1329,12 @@ footer a:hover{text-decoration:underline}
   var introReady = reduce ? Promise.resolve(null) : loadVideo('media/intro.mp4')
     .then(function (v) { v.loop = false; SOURCES.intro.vid = v; return v; })
     .catch(function () { return null; });
+
+  scramble(document.querySelector('.brand'), 900);
+  if ('IntersectionObserver' in window) {   // big headings decode as they scroll into view
+    var headIO = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) scramble(e.target, 700); }); }, { threshold: 0.6 });
+    document.querySelectorAll('.huge, .mid').forEach(function (h) { headIO.observe(h); });
+  }
 
   Promise.all([fontsReady, portraitReady, introReady]).then(function (r) {
     defaultHome = r[1];
