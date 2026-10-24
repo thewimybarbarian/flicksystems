@@ -94,6 +94,14 @@ a{color:inherit}
 .hero.glitching .brand,.hero.glitching .ch-name,.hero.glitching .sx-name{text-shadow:-2px 0 rgba(255,40,90,.85),2px 0 rgba(0,240,255,.85);transform:translateX(var(--gx,0))}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){ .hero::after,.hint::after{animation:none} }
+#code{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;mix-blend-mode:screen}
+.hud{position:absolute;z-index:1;top:calc(var(--pad) + 56px);right:var(--pad);margin:0;font:500 11px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:rgba(61,255,138,.78);text-align:right;white-space:pre;pointer-events:none;text-shadow:0 0 8px rgba(61,255,138,.4)}
+.hero.glitching .hud{color:#ff2d78;text-shadow:-1px 0 rgba(0,240,255,.9),1px 0 rgba(255,45,120,.9)}
+.hint{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:rgba(61,255,138,.85)}
+.hint::before{content:"> "}
+.hint::after{color:#3dff8a}
+.ch.is-active .ch-name{text-shadow:0 0 22px rgba(61,255,138,.35)}
+@media (max-width:700px){ .hud{display:none} }
 .drop{position:fixed;inset:12px;z-index:50;display:none;place-items:center;text-align:center;border:1px dashed var(--ink);background:rgba(0,0,0,.72);font-size:clamp(34px,6vw,84px);line-height:1;padding:24px}
 .drop.on{display:grid}
 
@@ -145,6 +153,8 @@ footer a:hover{text-decoration:underline}
 
 <header class="hero" id="top">
   <canvas id="field" aria-hidden="true"></canvas>
+  <canvas id="code" aria-hidden="true"></canvas>
+  <pre class="hud" id="hud" aria-hidden="true"></pre>
   <div class="schem" id="schem" aria-hidden="true"></div>
   <div class="fallback dot" aria-hidden="true">FLICK</div>
 
@@ -1018,6 +1028,8 @@ footer a:hover{text-decoration:underline}
     var name = preview || home;
     if (!name || (name === current && !force)) return;
     current = name;
+    glitchNow(1.3);
+    rain.cols.forEach(function (c) { c.on = Math.random() < (RAIN_AMT[name] || 0.2); });
     if (build(name)) morph(spread || 420);
     if (schemEl) schemEl.classList.toggle('on', name === 'systems');
     if (CH_HINT[name]) hint(CH_HINT[name]);
@@ -1103,6 +1115,7 @@ footer a:hover{text-decoration:underline}
     var r = hero.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, now = performance.now();
     var cs = current && SOURCES[current];
     glitchNow(current === 'photography' ? 2 : current === 'chaos' ? 1.7 : 1.2);
+    codeBurst(x, y);
     if (cs && cs.type === 'anim' && cs.fn !== 'word3d' && anim && anim.click) {
       anim.click(x, y, now);
       if (coarse) { stopCycle(); clearTimeout(resumeCycle); resumeCycle = setTimeout(startCycle, 8000); }
@@ -1191,8 +1204,110 @@ footer a:hover{text-decoration:underline}
     var k = strength || 1, now = performance.now();
     GL.until = now + rnd(90, 200) * k; GL.split = rnd(2, 6) * k; GL.bands = [];
     for (var b = 0, nb = 1 + ((Math.random() * 3 * k) | 0); b < nb; b++)
-      GL.bands.push({ y: rnd(0, H), h: rnd(6, 46 * k), dx: (Math.random() < 0.5 ? -1 : 1) * rnd(10, 60 * k), j: 1 });
+      GL.bands.push({ y: rnd(0, H), h: rnd(6, 46 * k), dx: (Math.random() < 0.5 ? -1 : 1) * rnd(10, 60 * k), j: 1,
+                      c: NEON[(Math.random() * NEON.length) | 0], tag: Math.random() < 0.45 });
     hero.style.setProperty('--gx', (Math.random() < 0.5 ? -1 : 1) * rnd(1, 4 * k) + 'px');
+  }
+
+  /* ---------------- code layer: binary rain, glitch readouts, click bursts ----------------
+     A transparent 2D canvas over the dots. Instead of painting black to leave trails
+     (which would hide the dots), it erases a little of itself every frame. */
+  var NEON = [[0.24, 1, 0.54], [0.3, 0.79, 1], [1, 0.18, 0.47], [1, 0.84, 0.2]];
+  var NEON_CSS = ['61,255,138', '76,201,255', '255,45,120', '255,214,51'];
+  var HEX = '0123456789ABCDEF';
+  var TAGS = ['ACCESS GRANTED', 'SIGNAL LOST', 'DECRYPTING', 'root@flick', 'ERR 0x1F', 'sudo make art', 'OVERRIDE', '0xDEADBEEF', 'sys.flick', 'BUFFER OVERFLOW'];
+  // how much of the screen rains code on each source: busier on Chaos and the camera
+  var RAIN_AMT = { wordmark: 0.3, intro: 0.2, systems: 0.42, chaos: 0.62, photography: 0.52 };
+  var codeCv = null, cx2 = null, rain = { cols: [], cell: 16, next: 0 }, bursts = [];
+  function codeResize() {
+    codeCv = codeCv || document.getElementById('code');
+    if (!codeCv) return;
+    cx2 = cx2 || codeCv.getContext('2d');
+    codeCv.width = Math.round(W * DPR); codeCv.height = Math.round(H * DPR);
+    cx2.setTransform(DPR, 0, 0, DPR, 0, 0);
+    rain.cell = W < 700 ? 13 : 16; rain.cols = [];
+    rain.bottom = nav.getBoundingClientRect().top - hero.getBoundingClientRect().top - 8;   // the code stays above the channel labels
+    for (var c = 0, n = Math.ceil(W / rain.cell); c < n; c++) rain.cols.push(newCol(true));
+  }
+  function newCol(anywhere) {
+    var r = Math.random();
+    return { y: anywhere ? rnd(-H, H) : rnd(-H * 0.5, 0), v: rnd(0.7, 1.7), on: Math.random() < (RAIN_AMT[current] || 0.2),
+             hex: r < 0.18, c: r < 0.6 ? 0 : r < 0.85 ? 1 : r < 0.96 ? 2 : 3, last: '' };
+  }
+  function glyph(hex) { return hex ? HEX[(Math.random() * 16) | 0] : Math.random() < 0.5 ? '0' : '1'; }
+  function codeBurst(x, y) {                 // a click sprays ones and zeros out of the dots
+    if (reduce) return;
+    for (var b = 0; b < 46 && bursts.length < 140; b++) {
+      var a = rnd(0, 6.283), v = rnd(1.5, 7);
+      bursts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rnd(26, 60), c: (Math.random() * 4) | 0, hex: Math.random() < 0.3 });
+    }
+  }
+  function drawCode(now, glitching) {
+    if (!cx2 || reduce) return;
+    var g = cx2, cell = rain.cell, i, col;
+    g.globalCompositeOperation = 'destination-out';
+    g.fillStyle = 'rgba(0,0,0,0.045)'; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = 'source-over';
+    g.save(); g.beginPath(); g.rect(0, 0, W, rain.bottom || H); g.clip();
+    g.textBaseline = 'top';
+    if (now > rain.next) {                   // the rain steps a character at a time
+      rain.next = now + 55;
+      g.font = '600 ' + (cell - 2) + 'px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+      for (i = 0; i < rain.cols.length; i++) {
+        col = rain.cols[i];
+        col.y += cell * col.v;
+        if (col.y > (rain.bottom || H) + cell * 4) { rain.cols[i] = newCol(false); continue; }
+        if (!col.on || col.y < 0) continue;
+        var x = i * cell, rgb = NEON_CSS[col.c];
+        if (col.last) {                      // the old head settles into the trail colour
+          g.clearRect(x, col.y - cell * col.v - 1, cell, cell + 2);
+          g.fillStyle = 'rgba(' + rgb + ',0.85)'; g.fillText(col.last, x, col.y - cell * col.v);
+        }
+        col.last = glyph(col.hex);
+        g.fillStyle = '#f2fff5'; g.fillText(col.last, x, col.y);
+      }
+    }
+    if (glitching && Math.random() < 0.35) {  // glitch readouts: blocks of hex and words in the torn bands
+      g.font = '600 12px ui-monospace, Menlo, Consolas, monospace';
+      for (i = 0; i < GL.bands.length; i++) {
+        var bd = GL.bands[i], ci = NEON.indexOf(bd.c), rgbB = NEON_CSS[ci < 0 ? 0 : ci];
+        var bx = rnd(0, W * 0.8), bw = rnd(60, 380);
+        g.fillStyle = 'rgba(' + rgbB + ',0.12)'; g.fillRect(bx, bd.y, bw, bd.h);
+        var str = '';
+        if (bd.tag && Math.random() < 0.5) str = '[' + TAGS[(Math.random() * TAGS.length) | 0] + ']';
+        else for (var q = 0; q < 6; q++) str += (Math.random() < 0.5 ? '0x' + HEX[(Math.random() * 16) | 0] + HEX[(Math.random() * 16) | 0] : (Math.random() * 256 | 0).toString(2).padStart(8, '0')) + ' ';
+        g.fillStyle = 'rgba(' + rgbB + ',0.95)'; g.fillText(str, bx + rnd(-20, 20), bd.y + bd.h * 0.5 - 6);
+      }
+    }
+    if (bursts.length) {
+      g.font = '700 13px ui-monospace, Menlo, Consolas, monospace';
+      for (i = bursts.length - 1; i >= 0; i--) {
+        var p = bursts[i];
+        p.x += p.vx; p.y += p.vy; p.vx *= 0.94; p.vy = p.vy * 0.94 + 0.08; p.life--;
+        if (p.life <= 0) { bursts.splice(i, 1); continue; }
+        g.fillStyle = 'rgba(' + NEON_CSS[p.c] + ',' + Math.min(1, p.life / 30) + ')';
+        g.fillText(glyph(p.hex), p.x, p.y);
+      }
+    }
+    g.restore();
+  }
+  // terminal readout in the corner: a boot log first, then live numbers
+  var hudEl = document.getElementById('hud'), hudT = 0, fpsS = 60, lastNow = 0, bootAt = performance.now();
+  var BOOT = ['> boot flick.sys', '> mount /dev/dots ...... ok', '> alloc ' + N + ' pts ..... ok', '> decrypt face.mp4 ..... ok', '> ACCESS GRANTED'];
+  function drawHud(now) {
+    var dt = now - lastNow; lastNow = now;
+    if (dt > 0 && dt < 200) fpsS += (1000 / dt - fpsS) * 0.05;
+    if (!hudEl || now - hudT < (reduce ? 1000 : 110)) return;
+    hudT = now;
+    var bt = now - bootAt;
+    if (bt < 2600 && !reduce) { hudEl.textContent = BOOT.slice(0, 1 + Math.floor(bt / 430)).join('\n'); return; }
+    var bits = '';
+    for (var b = 0; b < 16; b++) bits += Math.random() < 0.5 ? '0' : '1';
+    var sig = ((Math.random() * 65536) | 0).toString(16).toUpperCase();
+    while (sig.length < 4) sig = '0' + sig;
+    hudEl.textContent = 'root@flick:~$ ./run ' + (current === 'wordmark' ? 'flick' : current || 'idle') +
+      '\npts ' + N + '  fps ' + Math.round(fpsS) + '  sig 0x' + sig +
+      '\n' + (GL.on ? '!! SIGNAL CORRUPT  ' : '') + bits.slice(0, 8) + ' ' + bits.slice(8);
   }
 
   /* ---------------- loop ---------------- */
@@ -1261,13 +1376,15 @@ footer a:hover{text-decoration:underline}
         if (tw > 0.97) lit += (tw - 0.97) * 18; // brief glint near the crest, about 1 dot in 14 at any moment
       }
       lit *= Math.min(1.5, lm);
-      if (glitching) {                       // slice tears: bands of dots jump sideways
+      var gt = null;
+      if (glitching) {                       // slice tears: bands of dots jump sideways, lit neon
         for (var gb = 0; gb < GL.bands.length; gb++) {
           var band = GL.bands[gb];
-          if (py[i] > band.y && py[i] < band.y + band.h) wx += band.dx * band.j;
+          if (py[i] > band.y && py[i] < band.y + band.h) { wx += band.dx * band.j; gt = band.c; }
         }
       }
       data[o] = px[i] + wx; data[o + 1] = py[i] + wy; data[o + 2] = cr[i] * lit; data[o + 3] = cg[i] * lit; data[o + 4] = cb[i] * lit; data[o + 5] = sz[i] * lm;
+      if (gt) { data[o + 2] = gt[0]; data[o + 3] = gt[1]; data[o + 4] = gt[2]; }
     }
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform2f(uRes, W, H); gl.uniform1f(uDpr, DPR); gl.uniform1f(uGain, 0.9);
@@ -1282,6 +1399,7 @@ footer a:hover{text-decoration:underline}
     } else {
       gl.uniform2f(uOff, 0, 0); gl.drawArrays(gl.POINTS, 0, N);
     }
+    drawCode(now, glitching); drawHud(now);
   }
   function tick() {
     running = inView && !document.hidden;
@@ -1297,6 +1415,7 @@ footer a:hover{text-decoration:underline}
     if (Math.round(r.width) === W && Math.round(r.height) === H) return false;
     W = Math.round(r.width); H = Math.round(r.height); DPR = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    codeResize();
     gl.viewport(0, 0, canvas.width, canvas.height);
     computeBox();
     return true;
