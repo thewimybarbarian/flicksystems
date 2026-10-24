@@ -329,11 +329,16 @@ footer a:hover{text-decoration:underline}
     var bottom = hintEl.getBoundingClientRect().top - hr.top - 8;
     var padX = Math.max(16, W * 0.03);
     box = { x: padX, y: top, w: W - padX * 2, h: Math.max(140, bottom - top) };
+    var navTop = nav.getBoundingClientRect().top - hr.top;
+    // a taller area for the intro: from just under the header down to the channel names
+    var barBottom = bar.getBoundingClientRect().bottom - hr.top;
+    tallBox = { x: padX, y: barBottom + 6, w: W - padX * 2, h: Math.max(160, navTop - barBottom - 14) };
   }
-  function fit(aspect) {
-    var w = box.w, h = w / aspect;
-    if (h > box.h) { h = box.h; w = h * aspect; }
-    return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w: w, h: h };
+  var tallBox = { x: 0, y: 0, w: 1, h: 1 };
+  function fit(aspect, area) {
+    var b = area || box, w = b.w, h = w / aspect;
+    if (h > b.h) { h = b.h; w = h * aspect; }
+    return { x: b.x + (b.w - w) / 2, y: b.y + (b.h - h) / 2, w: w, h: h };
   }
   function dotBase(f) {
     var s = Math.sqrt((f.w * f.h) / N);
@@ -895,9 +900,13 @@ footer a:hover{text-decoration:underline}
 
   /* Video (webcam mirror or a talking-head clip): a stable halftone grid. */
   var grid = null;
-  function layoutGrid(vid) {
-    var a = vid && vid.videoWidth ? vid.videoWidth / vid.videoHeight : 4 / 3;
-    var f = fit(a), gw = Math.round(Math.sqrt(N * a)), gh = Math.floor(N / gw);
+  function videoAspect(src) {              // width/height of the part of the video that is shown
+    var vid = src.vid, c = src.crop || [0, 0, 1, 1];
+    return vid && vid.videoWidth ? (vid.videoWidth * (c[2] - c[0])) / (vid.videoHeight * (c[3] - c[1])) : 4 / 3;
+  }
+  function layoutGrid(vid, aspect, area) {
+    var a = aspect || (vid && vid.videoWidth ? vid.videoWidth / vid.videoHeight : 4 / 3);
+    var f = fit(a, area), gw = Math.round(Math.sqrt(N * a)), gh = Math.floor(N / gw);
     grid = { a: a, gw: gw, gh: gh, cw: f.w / gw };
     for (var i = 0; i < N; i++) {
       if (i < gw * gh) {
@@ -909,26 +918,34 @@ footer a:hover{text-decoration:underline}
   function updateVideo(src) {
     var vid = src.vid;
     if (!vid || vid.readyState < 2 || !vid.videoWidth) return;
-    var a = vid.videoWidth / vid.videoHeight;
-    if (!grid || Math.abs(grid.a - a) > 0.01) layoutGrid(vid);
-    var gw = grid.gw, gh = grid.gh, n = gw * gh;
-    ensureOff(gw, gh);
+    var a = videoAspect(src), cr = src.crop || [0, 0, 1, 1];
+    if (!grid || Math.abs(grid.a - a) > 0.01) layoutGrid(vid, a, src.tall ? tallBox : null);
+    var gw = grid.gw, gh = grid.gh, n = gw * gh, P = src.pool || 1, pw = gw * P;
+    ensureOff(pw, gh * P);
     octx.save();
-    if (src.mirror) { octx.translate(gw, 0); octx.scale(-1, 1); }
-    octx.drawImage(vid, 0, 0, gw, gh);
+    if (src.mirror) { octx.translate(pw, 0); octx.scale(-1, 1); }
+    octx.drawImage(vid, cr[0] * vid.videoWidth, cr[1] * vid.videoHeight, (cr[2] - cr[0]) * vid.videoWidth, (cr[3] - cr[1]) * vid.videoHeight, 0, 0, pw, gh * P);
     octx.restore();
-    var d = octx.getImageData(0, 0, gw, gh).data, mn = 1, mx = 0, i, l;
+    var d = octx.getImageData(0, 0, pw, gh * P).data, mn = 1, mx = 0, i, l;
     for (i = 0; i < n; i++) {
-      l = (d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114) / 255;
+      // each dot takes the brightest pixel in its little block, so thin lines aren't missed
+      var gx0 = (i % gw) * P, gy0 = ((i / gw) | 0) * P; l = 0;
+      for (var yy = 0; yy < P; yy++) for (var xx = 0; xx < P; xx++) {
+        var j = ((gy0 + yy) * pw + gx0 + xx) * 4, v2 = (d[j] * 0.299 + d[j + 1] * 0.587 + d[j + 2] * 0.114) / 255;
+        if (v2 > l) l = v2;
+      }
       lumBuf[i] = l; if (l < mn) mn = l; if (l > mx) mx = l;
     }
     var span = Math.max(0.08, mx - mn), vbase = Math.max(1.5, Math.min(4.4, grid.cw * 1.05)) * 1.15;
+    var tint = src.tint || [0.957, 0.957, 0.95];
     for (i = 0; i < n; i++) {
-      l = Math.pow(clamp01((lumBuf[i] - mn) / span), 1.3);
+      // line art: only what's brighter than the cutoff becomes dots; otherwise auto-levels
+      l = src.floor !== undefined ? Math.pow(clamp01((lumBuf[i] - src.floor) / (1 - src.floor)), 0.8)
+                                  : Math.pow(clamp01((lumBuf[i] - mn) / span), 1.3);
       // same sizing as the images: every lit spot gets a full dot, brightness only adds to it
       ts[i] = l < 0.08 ? 0 : vbase * (0.35 + 1.0 * l);
       var c = 0.55 + 0.45 * l;
-      tr[i] = 0.957 * c; tg[i] = 0.957 * c; tb[i] = 0.95 * c;
+      tr[i] = tint[0] * c; tg[i] = tint[1] * c; tb[i] = tint[2] * c;
     }
   }
 
@@ -942,6 +959,8 @@ footer a:hover{text-decoration:underline}
     portrait:    { type: 'image', gamma: 0.85, floor: 0.06, sat: 0.9, size: 1.1 },
     custom:      { type: 'image', gamma: 0.85, floor: 0.05, sat: 1, size: 1.1 },
     reel:        { type: 'video', vid: null, mirror: false },
+    // media/intro.mp4 plays once as dots when the page opens, then becomes FLICK. Swap the file to change it.
+    intro:       { type: 'video', vid: null, mirror: false, crop: [0.02, 0.235, 0.98, 0.745], floor: 0.36, pool: 3, tint: [0.8, 0.9, 1], tall: true },
     dropped:     { type: 'video', vid: null, mirror: false },
     mirror:      { type: 'video', vid: null, mirror: true }
   };
@@ -951,7 +970,7 @@ footer a:hover{text-decoration:underline}
     var s = SOURCES[name];
     if (s.type === 'image') { if (!imgs[name]) return false; sampleImage(imgs[name], s); }
     else if (s.type === 'anim') initAnim(s.fn, performance.now());
-    else if (s.type === 'video') { grid = null; layoutGrid(s.vid); }
+    else if (s.type === 'video') { grid = null; layoutGrid(s.vid, videoAspect(s), s.tall ? tallBox : null); }
     return true;
   }
   function morph(spread) {
@@ -1084,7 +1103,7 @@ footer a:hover{text-decoration:underline}
         v.muted = true; v.playsInline = true; v.srcObject = s;
         return v.play().then(function () {
           SOURCES.mirror.vid = v;
-          homeBeforeMirror = home === 'mirror' ? defaultHome : home;
+          homeBeforeMirror = home === 'mirror' || home === 'intro' ? defaultHome : home;
           home = 'mirror'; stopCycle(); setPreview(null); apply(true, 600);
           mirrorBtn.textContent = 'Stop mirror'; mirrorBtn.setAttribute('aria-pressed', 'true');
           hint('Mirror is on. The video stays in this browser and is never recorded.');
@@ -1239,10 +1258,26 @@ footer a:hover{text-decoration:underline}
     })
     .catch(function () { return 'wordmark'; });
 
-  Promise.all([fontsReady, portraitReady]).then(function (r) {
-    defaultHome = r[1]; home = defaultHome;
-    apply(true, 900);
-    startCycle();
+  var introReady = reduce ? Promise.resolve(null) : loadVideo('media/intro.mp4')
+    .then(function (v) { v.loop = false; SOURCES.intro.vid = v; return v; })
+    .catch(function () { return null; });
+
+  Promise.all([fontsReady, portraitReady, introReady]).then(function (r) {
+    defaultHome = r[1];
+    var iv = r[2];
+    if (!iv) { home = defaultHome; apply(true, 900); startCycle(); return; }
+    home = 'intro'; apply(true, 900);
+    var finished = false;
+    function endIntro() {                  // when it ends, or on the first click, the dots become FLICK
+      if (finished) return;
+      finished = true; iv.pause();
+      if (home === 'intro') { home = defaultHome; apply(true, 900); }
+      startCycle();
+    }
+    iv.play().catch(endIntro);
+    iv.addEventListener('ended', endIntro, { once: true });
+    canvas.addEventListener('pointerdown', endIntro, { once: true });
+    setTimeout(endIntro, ((iv.duration || 8) + 1.5) * 1000);   // never get stuck on it
   });
 })();
 </script>
