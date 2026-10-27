@@ -1031,8 +1031,8 @@ footer a:hover{text-decoration:underline}
     // media/intro.mp4 plays once as dots when the page opens, then becomes FLICK. Swap the file to change it;
     // for line art add crop/pool and a higher floor (see git history for the blueprint clip's settings).
     intro:       { type: 'video', vid: null, mirror: false, crop: [0.03, 0.02, 0.97, 0.98], floor: 0.09, tint: [0.96, 0.96, 0.95], tall: true },
-    // media/intro2.mp4 plays right after it, in its own colours (white icons, orange sparks)
-    intro2:      { type: 'video', vid: null, mirror: false, crop: [0.03, 0.08, 0.97, 0.92], floor: 0.16, color: true, tall: true },
+    // media/intro-code.mp4 plays right after it, in its own colours (Jason with green code projected on him)
+    intro2:      { type: 'video', vid: null, mirror: false, crop: [0.02, 0.03, 0.98, 0.97], floor: 0.1, color: true, tall: true },
     dropped:     { type: 'video', vid: null, mirror: false },
     mirror:      { type: 'video', vid: null, mirror: true }
   };
@@ -1489,7 +1489,7 @@ footer a:hover{text-decoration:underline}
     // The second clip starts loading once the first is ready, so it doesn't slow that one down.
     var loads = {
       intro: Promise.resolve(r[2]),
-      intro2: reduce ? Promise.resolve(null) : loadVideo('media/intro2.mp4')
+      intro2: reduce ? Promise.resolve(null) : loadVideo('media/intro-code.mp4')
         .then(function (v) { v.loop = false; SOURCES.intro2.vid = v; return v; })
         .catch(function () { return null; })
     };
