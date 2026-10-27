@@ -44,7 +44,7 @@ a{color:inherit}
 .hero{position:relative;height:100vh;height:100svh;min-height:560px;overflow:hidden;display:flex;flex-direction:column;isolation:isolate}
 #field{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block;cursor:crosshair;touch-action:pan-y}
 .fallback{display:none}
-.no-field .fallback{display:grid;position:absolute;inset:0;place-items:center;font-size:clamp(80px,22vw,360px);line-height:1;z-index:0}
+.no-field .fallback{display:grid;position:absolute;inset:0;place-items:center;font-size:clamp(36px,9vw,150px);line-height:1;z-index:0}
 
 .bar{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding:var(--pad) var(--pad) 0;pointer-events:none}
 .bar>*{pointer-events:auto}
@@ -156,7 +156,7 @@ footer a:hover{text-decoration:underline}
   <canvas id="code" aria-hidden="true"></canvas>
   <pre class="hud" id="hud" aria-hidden="true"></pre>
   <div class="schem" id="schem" aria-hidden="true"></div>
-  <div class="fallback dot" aria-hidden="true">FLICK</div>
+  <div class="fallback dot" aria-hidden="true">FLICK SYSTEMS</div>
 
   <div class="bar">
     <div>
@@ -845,55 +845,78 @@ footer a:hover{text-decoration:underline}
     }
   }
 
-  /* ---- FLICK in 3D ----
+  /* ---- FLICK SYSTEMS in 3D ----
      The Doto wordmark is rastered, then every lit pixel becomes a dot on the
      front face, the back face or the side walls of an extruded letter, so each
-     of Doto's square dots turns into a little block. The word sways in
-     perspective, tilts toward the cursor, bobs letter by letter, and every few
-     seconds a spin ripples through F, L, I, C, K in turn. */
+     of Doto's square dots turns into a little block. FLICK sits big with SYSTEMS
+     smaller under it. The word sways in perspective, tilts toward the cursor,
+     bobs letter by letter, and every few seconds a spin ripples through the letters. */
   var AZ = new Float32Array(N);
   var WORD_SPIN_EVERY = 5200, WORD_SPIN_MS = 900;
+  // One entry per line. size is relative to the first line, track is letter spacing (in ems),
+  // deep scales how far that line is extruded.
+  var WORD_LINES = [{ text: 'FLICK', size: 1, weight: 900, track: 0, deep: 1 },
+                    { text: 'SYSTEMS', size: 0.5, weight: 700, track: 0.3, deep: 0.45 }];
   function initWord3D(now) {
-    var text = 'FLICK', tall = box.h > box.w * 1.25;
+    var tall = box.h > box.w * 1.25, i, k, l;
     var len = tall ? box.h : box.w, cross = tall ? box.w : box.h;
-    var cw = Math.round(Math.max(160, Math.min(700, len * 0.55))), ch = Math.max(60, Math.round(cw * cross / len));
+    var cw = Math.round(Math.max(160, Math.min(800, len * 0.6))), ch = Math.max(60, Math.round(cw * cross / len));
     var toScreen = len / cw;                                  // canvas px -> screen px
     ensureOff(cw, ch);
     octx.fillStyle = '#000'; octx.fillRect(0, 0, cw, ch);
-    var fs = ch * 0.62;
-    octx.font = '900 ' + fs + 'px Doto, Geist, sans-serif';
-    var full = octx.measureText(text).width, maxW = cw * 0.84;
-    if (full > maxW) { fs *= maxW / full; octx.font = '900 ' + fs + 'px Doto, Geist, sans-serif'; full = octx.measureText(text).width; }
-    var x0 = (cw - full) / 2, edges = [x0], i, k;
-    for (i = 1; i <= text.length; i++) edges.push(x0 + octx.measureText(text.slice(0, i)).width);
-    octx.fillStyle = '#fff'; octx.textBaseline = 'middle'; octx.textAlign = 'left';
-    octx.fillText(text, x0, ch / 2);
-    octx.strokeStyle = '#fff'; octx.lineWidth = Math.max(1, fs * 0.022); octx.lineJoin = 'round';
-    octx.strokeText(text, x0, ch / 2);
+    // one font size for the first line that lets every line fit the width and the stack fit the height
+    var LH = 0.82, GAP = 0.1, stack = 0, widest = 0;
+    function lineWidth(ln, f) {             // text width at size f, letter spacing included
+      octx.font = ln.weight + ' ' + f + 'px Doto, Geist, sans-serif';
+      return octx.measureText(ln.text).width + ln.track * f * (ln.text.length - 1);
+    }
+    WORD_LINES.forEach(function (ln, n) {
+      stack += ln.size * LH + (n ? GAP : 0); widest = Math.max(widest, lineWidth(ln, 100) / 100 * ln.size);
+    });
+    var fs = Math.min(cw * 0.84 / widest, ch * 0.78 / stack, ch * 0.62);
+    octx.fillStyle = '#fff'; octx.strokeStyle = '#fff'; octx.textBaseline = 'middle'; octx.textAlign = 'left'; octx.lineJoin = 'round';
+    var letters = [], rows = [], y = (ch - stack * fs) / 2;
+    WORD_LINES.forEach(function (ln, n) {
+      var f = fs * ln.size, cy = y + (n ? GAP * fs : 0) + f * LH / 2;
+      var w = lineWidth(ln, f), x = (cw - w) / 2, first = letters.length;   // lineWidth also sets the font
+      octx.lineWidth = Math.max(1, f * 0.022);
+      for (var c = 0; c < ln.text.length; c++) {   // letter by letter, so the spacing applies
+        var cwid = octx.measureText(ln.text[c]).width;
+        letters.push({ a: x, b: x + cwid, deep: ln.size * ln.deep });
+        octx.fillText(ln.text[c], x, cy); octx.strokeText(ln.text[c], x, cy);
+        x += cwid + ln.track * f;
+      }
+      rows.push({ cy: cy, first: first, last: letters.length - 1 });
+      y = cy + f * LH / 2;
+    });
     var d = octx.getImageData(0, 0, cw, ch).data, face = [], side = [];
     function lit(x, y) { return x >= 0 && y >= 0 && x < cw && y < ch && d[(y * cw + x) * 4] > 128; }
-    for (var y = 0; y < ch; y++) for (var x = 0; x < cw; x++) {
-      if (!lit(x, y)) continue;
-      face.push(x, y);
-      if (!lit(x - 1, y) || !lit(x + 1, y) || !lit(x, y - 1) || !lit(x, y + 1)) side.push(x, y);
+    for (var yy = 0; yy < ch; yy++) for (var x = 0; x < cw; x++) {
+      if (!lit(x, yy)) continue;
+      face.push(x, yy);
+      if (!lit(x - 1, yy) || !lit(x + 1, yy) || !lit(x, yy - 1) || !lit(x, yy + 1)) side.push(x, yy);
     }
     var depth = fs * toScreen * 0.34, nFront = (N * 0.42) | 0, nBack = (N * 0.22) | 0;
-    var centers = [];
-    for (i = 0; i < text.length; i++) centers.push(((edges[i] + edges[i + 1]) / 2 - cw / 2) * toScreen);
+    var centers = letters.map(function (L) { return ((L.a + L.b) / 2 - cw / 2) * toScreen; });
     for (k = 0; k < N; k++) {
       var list = k < nFront + nBack || !side.length ? face : side, j = ((Math.random() * (list.length / 2)) | 0) * 2;
       var px0 = list[j] + Math.random(), py0 = list[j + 1] + Math.random();
+      // which letter: the nearest row by height, then the letter along it
+      var row = rows[0];
+      for (l = 1; l < rows.length; l++) if (Math.abs(py0 - rows[l].cy) < Math.abs(py0 - row.cy)) row = rows[l];
+      var li = row.first; while (li < row.last && px0 > letters[li + 1].a) li++;
+      var dz = depth * letters[li].deep;                     // smaller letters are shallower too
       AX[k] = (px0 - cw / 2) * toScreen; AY[k] = (py0 - ch / 2) * toScreen;
-      AZ[k] = k < nFront ? -depth / 2 : k < nFront + nBack ? depth / 2 : rnd(-depth / 2, depth / 2);
+      AZ[k] = k < nFront ? -dz / 2 : k < nFront + nBack ? dz / 2 : rnd(-dz / 2, dz / 2);
       AR[k] = k < nFront ? 0 : k < nFront + nBack ? 1 : 2;
-      var li = 0; while (li < text.length - 1 && px0 > edges[li + 1]) li++;
       AG[k] = li;
     }
+    var nl = letters.length;
     anim = {
       kind: 'word3d', t0: now, tall: tall, centers: centers, depth: depth, F: len * 1.6,
       cx: box.x + box.w / 2, cy: box.y + box.h / 2, bob: fs * toScreen * 0.05,
       base: Math.max(1.4, Math.min(3, Math.sqrt(face.length / 2 / N) * toScreen * 1.15)),
-      yawP: 0, pitchP: 0, ca: new Float32Array(text.length), sa: new Float32Array(text.length), by: new Float32Array(text.length)
+      yawP: 0, pitchP: 0, ca: new Float32Array(nl), sa: new Float32Array(nl), by: new Float32Array(nl)
     };
   }
   function updateWord3D(now) {
